@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.plugnstreaming.vip" name="PLUGN STREAMING VIP Repository" version="1.0.0" provider-name="PLUGN Team">
+    <extension point="xbmc.addon.repository">
+        <dir>
+            <info compressed="false">https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/zips/</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="pt_BR">Repositório oficial do addon PLUGN STREAMING VIP.</summary>
+        <description lang="pt_BR">Repositório Kodi para distribuição e atualização automática do addon PLUGN STREAMING VIP.</description>
+        <platform>all</platform>
+        <language>pt_BR</language>
+        <license>GPL-2.0</license>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </extension>
+</addon>
