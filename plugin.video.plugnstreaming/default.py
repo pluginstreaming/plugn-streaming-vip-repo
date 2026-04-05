@@ -24,7 +24,7 @@ MEDIA_PATH = os.path.join(ADDON_PATH, 'resources', 'media')
 ICON_MAIN  = os.path.join(ADDON_PATH, 'icon.png')
 FANART     = os.path.join(ADDON_PATH, 'fanart.jpg')
 
-ACCESS_PIN = '1056'
+ACCESS_PIN = '264918'
 
 # ============================================================
 # SERVIDORES - Carregados do servers.json
