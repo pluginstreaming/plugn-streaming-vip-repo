@@ -1,0 +1,45 @@
+{
+  "version": "1",
+  "servers": [
+    {
+      "id": 1,
+      "name": "1",
+      "url": "http://amsplay.com:80",
+      "user": "898570",
+      "pass": "MxCkDv",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "2",
+      "url": "http://amsplay.com:80",
+      "user": "724792",
+      "pass": "4WHKUG",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "3",
+      "url": "http://amsplay.com:80",
+      "user": "766763",
+      "pass": "ScaHWe",
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "4",
+      "url": "http://amsplay.com:80",
+      "user": "9543894325",
+      "pass": "secure",
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "5",
+      "url": "http://amsplay.com:80",
+      "user": "251265",
+      "pass": "7WCG69",
+      "active": true
+    }
+  ]
+}
