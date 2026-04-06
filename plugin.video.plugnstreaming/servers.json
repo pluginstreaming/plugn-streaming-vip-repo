@@ -3,23 +3,23 @@
   "servers": [
     {
       "id": 1,
-      "name": "1",
-      "url": "http://Vidaloka.fun:80",
-      "user": "541297667",
-      "pass": "177793439",
+      "name": "SERVIDOR 1",
+      "url": "http://amsplay.com:80",
+      "user": "898570",
+      "pass": "MxCkDv",
       "active": true
     },
     {
       "id": 2,
-      "name": "2",
-      "url": "http://ip10.cfd:80",
-      "user": "607385308",
-      "pass": "867678198",
+      "name": "SERVIDOR 2",
+      "url": "http://amsplay.com:80",
+      "user": "724792",
+      "pass": "4WHKUG",
       "active": true
     },
     {
       "id": 3,
-      "name": "3",
+      "name": "SERVIDOR 3",
       "url": "http://amsplay.com:80",
       "user": "766763",
       "pass": "ScaHWe",
@@ -27,18 +27,18 @@
     },
     {
       "id": 4,
-      "name": "4",
-      "url": "http://vlogmk.de:80",
-      "user": "36955332",
-      "pass": "32448301",
+      "name": "SERVIDOR 4",
+      "url": "http://amsplay.com:80",
+      "user": "9543894325",
+      "pass": "secure",
       "active": true
     },
     {
       "id": 5,
-      "name": "5",
-      "url": "http://mk21.uk:80",
-      "user": "827905236443",
-      "pass": "748474361307",
+      "name": "SERVIDOR 5",
+      "url": "http://amsplay.com:80",
+      "user": "251265",
+      "pass": "7WCG69",
       "active": true
     }
   ]
