@@ -3,23 +3,23 @@
   "servers": [
     {
       "id": 1,
-      "name": "SERVIDOR 1",
-      "url": "http://amsplay.com:80",
-      "user": "766763",
-      "pass": "ScaHWe",
+      "name": "1",
+      "url": "http://vidaloka.fun:80",
+      "user": "537264820",
+      "pass": "166641022",
       "active": true
     },
     {
       "id": 2,
-      "name": "SERVIDOR 2",
-      "url": "http://cdn.talpetsluz.uk:80",
-      "user": "827905236443",
-      "pass": "748474361307",
+      "name": "2",
+      "url": "http://ip10.cfd:80",
+      "user": "607385308",
+      "pass": "867678198",
       "active": true
     },
     {
       "id": 3,
-      "name": "SERVIDOR 3",
+      "name": "3",
       "url": "http://amsplay.com:80",
       "user": "766763",
       "pass": "ScaHWe",
@@ -27,7 +27,7 @@
     },
     {
       "id": 4,
-      "name": "SERVIDOR 4",
+      "name": "4",
       "url": "http://amsplay.com:80",
       "user": "9543894325",
       "pass": "secure",
@@ -35,7 +35,7 @@
     },
     {
       "id": 5,
-      "name": "SERVIDOR 5",
+      "name": "5",
       "url": "http://amsplay.com:80",
       "user": "251265",
       "pass": "7WCG69",

@@ -24,11 +24,33 @@ MEDIA_PATH = os.path.join(ADDON_PATH, 'resources', 'media')
 ICON_MAIN  = os.path.join(ADDON_PATH, 'icon.png')
 FANART     = os.path.join(ADDON_PATH, 'fanart.jpg')
 
-ACCESS_PIN = '264918'
+ACCESS_PIN = '1056'
 
 # ============================================================
 # SERVIDORES - Carregados do servers.json
 # ============================================================
+def update_servers_from_github():
+    """Atualiza servers.json do GitHub em background"""
+    try:
+        github_url = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
+        servers_file = os.path.join(ADDON_PATH, 'servers.json')
+        
+        # Tentar baixar do GitHub com timeout
+        response = urlrequest.urlopen(github_url, timeout=3)
+        data = response.read().decode('utf-8')
+        
+        # Validar JSON
+        json.loads(data)
+        
+        # Salvar o novo arquivo
+        with open(servers_file, 'w') as f:
+            f.write(data)
+        
+        log('Servidores atualizados do GitHub!')
+    except Exception as e:
+        log(f'Não foi possível atualizar do GitHub: {str(e)}')
+        pass
+
 def load_servers():
     """Carrega servidores do arquivo servers.json"""
     servers_file = os.path.join(ADDON_PATH, 'servers.json')
@@ -59,6 +81,12 @@ def get_default_servers():
         4: {'name': 'SERVIDOR 4','url': 'http://amsplay.com:80',   'user': '9543894325','pass': 'secure'},
         5: {'name': 'SERVIDOR 5','url': 'http://amsplay.com:80',   'user': '251265','pass': '7WCG69'},
     }
+
+# Atualizar do GitHub em background (sem bloquear)
+try:
+    update_servers_from_github()
+except:
+    pass
 
 SERVERS = load_servers()
 
@@ -392,7 +420,13 @@ def show_vod_streams(cat_id):
         duration = str(movie.get('duration', ''))
         url   = make_stream_url(sid, 'movie', ext)
         lbl   = '[COLOR FFFF6B00]{}[/COLOR]  [COLOR FF888888]{}[/COLOR]'.format(name, year)
-        info  = {'title': name, 'plot': plot, 'mediatype': 'movie'}
+        info  = {
+            'title': name,
+            'plot': plot,
+            'mediatype': 'movie',
+            'sorttitle': name,
+            'originaltitle': name,
+        }
         try:
             if year and year.isdigit():
                 info['year'] = int(year)
@@ -728,6 +762,51 @@ def do_clear_cache():
     notify('[COLOR FF00CC44]Cache limpo com sucesso![/COLOR]')
 
 # ============================================================
+# ATUALIZAR SERVIDORES
+# ============================================================
+def update_servers_menu():
+    """Menu para atualizar servidores do GitHub"""
+    prog = xbmcgui.DialogProgress()
+    prog.create(ADDON_NAME, 'Atualizando servidores do GitHub...')
+    
+    try:
+        github_url = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
+        servers_file = os.path.join(ADDON_PATH, 'servers.json')
+        
+        prog.update(30, 'Conectando ao GitHub...')
+        
+        # Tentar baixar do GitHub
+        req = urlrequest.Request(github_url, headers={'User-Agent': 'Kodi/19.0'})
+        response = urlrequest.urlopen(req, timeout=10)
+        data = response.read().decode('utf-8')
+        
+        prog.update(60, 'Validando dados...')
+        
+        # Validar JSON
+        json.loads(data)
+        
+        prog.update(90, 'Salvando arquivo...')
+        
+        # Salvar o novo arquivo
+        with open(servers_file, 'w') as f:
+            f.write(data)
+        
+        prog.close()
+        notify('Servidores atualizados com sucesso!', xbmcgui.NOTIFICATION_INFO, 3000)
+        log('Servidores atualizados do GitHub com sucesso!')
+        
+        # Recarregar os servidores
+        global SERVERS
+        SERVERS = load_servers()
+        
+    except Exception as e:
+        prog.close()
+        log(f'Erro ao atualizar servidores: {str(e)}')
+        notify(f'Erro ao atualizar: {str(e)}', xbmcgui.NOTIFICATION_ERROR, 5000)
+    
+    show_main_menu()
+
+# ============================================================
 # ROTEADOR
 # ============================================================
 def router(params):
@@ -768,6 +847,8 @@ def router(params):
         ADDON.openSettings()
     elif action == 'clear_cache':
         do_clear_cache()
+    elif action == 'update_servers':
+        update_servers_menu()
     elif action == 'none':
         pass
     else:
