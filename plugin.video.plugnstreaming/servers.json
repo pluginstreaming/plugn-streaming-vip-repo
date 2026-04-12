@@ -44,10 +44,10 @@
     {
       "id": 6,
       "name": "6",
-      "url": "http://COLOQUE_A_URL_AQUI:80",
-      "user": "COLOQUE_O_USUARIO_AQUI",
-      "pass": "COLOQUE_A_SENHA_AQUI",
-      "active": false
+      "url": "http://208.115.223.178",
+      "user": "4898461598",
+      "pass": "940566657",
+      "active": true
     },
     {
       "id": 7,
