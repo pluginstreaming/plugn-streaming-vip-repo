@@ -60,7 +60,7 @@
     {
       "id": 8,
       "name": "8",
-      "url": "http://amsplay.com.80",
+      "url": "http://amsplay.com:80",
       "user": "593444",
       "pass": "AnTs5n",
       "active": true
