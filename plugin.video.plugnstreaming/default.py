@@ -60,7 +60,7 @@ def load_servers():
         servers_dict = {}
         for srv in data.get('servers', []):
             sid = srv.get('id', 0)
-            if sid > 0:
+            if sid > 0 and srv.get('active', True):
                 servers_dict[sid] = {
                     'name': srv.get('name', f'SERVIDOR {sid}'),
                     'url': srv.get('url', ''),
