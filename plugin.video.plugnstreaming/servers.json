@@ -4,9 +4,9 @@
     {
       "id": 1,
       "name": "1",
-      "url": "http://neia87.xyz:80",
-      "user": "a70116973",
-      "pass": "112233Aa",
+      "url": "http://vidaloka.fun:80",
+      "user": "537264820",
+      "pass": "166641022",
       "active": true
     },
     {
@@ -21,35 +21,65 @@
       "id": 3,
       "name": "3",
       "url": "http://amsplay.com:80",
-      "user": "1m9a1rs3zo",
-      "pass": "241qmmvbmg",
+      "user": "766763",
+      "pass": "ScaHWe",
       "active": true
     },
     {
       "id": 4,
       "name": "4",
-      "url": "http://cbapp.pro:80",
-      "user": "icarosampaio",
-      "pass": "Yaddz3447p",
+      "url": "http://amsplay.com:80",
+      "user": "9543894325",
+      "pass": "secure",
       "active": true
     },
     {
       "id": 5,
       "name": "5",
-      "url": "http://newoneblue.site",
-      "user": "roseni",
-      "pass": "123456",
+      "url": "http://amsplay.com:80",
+      "user": "251265",
+      "pass": "7WCG69",
       "active": true
     },
     {
       "id": 6,
       "name": "6",
-      "url": "http://queroassistir.top:80",
-      "user": "309860569",
-      "pass": "691216612",
-      "active": true
-
-
+      "url": "http://COLOQUE_A_URL_AQUI:80",
+      "user": "COLOQUE_O_USUARIO_AQUI",
+      "pass": "COLOQUE_A_SENHA_AQUI",
+      "active": false
+    },
+    {
+      "id": 7,
+      "name": "7",
+      "url": "http://COLOQUE_A_URL_AQUI:80",
+      "user": "COLOQUE_O_USUARIO_AQUI",
+      "pass": "COLOQUE_A_SENHA_AQUI",
+      "active": false
+    },
+    {
+      "id": 8,
+      "name": "8",
+      "url": "http://COLOQUE_A_URL_AQUI:80",
+      "user": "COLOQUE_O_USUARIO_AQUI",
+      "pass": "COLOQUE_A_SENHA_AQUI",
+      "active": false
+    },
+    {
+      "id": 9,
+      "name": "9",
+      "url": "http://COLOQUE_A_URL_AQUI:80",
+      "user": "COLOQUE_O_USUARIO_AQUI",
+      "pass": "COLOQUE_A_SENHA_AQUI",
+      "active": false
+    },
+    {
+      "id": 10,
+      "name": "10",
+      "url": "http://COLOQUE_A_URL_AQUI:80",
+      "user": "COLOQUE_O_USUARIO_AQUI",
+      "pass": "COLOQUE_A_SENHA_AQUI",
+      "active": false
     }
   ]
 }
