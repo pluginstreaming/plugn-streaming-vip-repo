@@ -71,7 +71,7 @@
       "url": "http://peercast.sbs:80",
       "user": "23031167",
       "pass": "40368769",
-      "active": false
+      "active": true
     },
     {
       "id": 10,
