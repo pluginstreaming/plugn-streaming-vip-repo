@@ -68,9 +68,9 @@
     {
       "id": 9,
       "name": "9",
-      "url": "http://COLOQUE_A_URL_AQUI:80",
-      "user": "COLOQUE_O_USUARIO_AQUI",
-      "pass": "COLOQUE_A_SENHA_AQUI",
+      "url": "http://peercast.sbs:80",
+      "user": "23031167",
+      "pass": "40368769",
       "active": false
     },
     {
