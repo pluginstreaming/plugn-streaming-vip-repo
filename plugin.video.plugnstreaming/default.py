@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.1.5
+#  Versao: 2.1.6
 # ============================================================
 import sys
 import os
@@ -313,67 +313,61 @@ def get_client_name():
 def ensure_auth():
     """
     Verifica autenticacao a cada abertura.
-    Logica simplificada:
-    1. Se tem senha salva -> verifica online
-       - ativo=true  -> libera acesso
-       - ativo=false -> mostra bloqueado, MANTEM senha salva para proxima verificacao
-    2. Se nao tem senha salva -> pede senha
-    3. Sem internet + autenticado -> permite com cache
-    4. Sem internet + nao autenticado -> bloqueia
+    - Sempre consulta o GitHub com anti-cache
+    - Se ativo=true  -> libera acesso (mostra boas-vindas se estava bloqueado)
+    - Se ativo=false -> bloqueia (mantem senha para proxima verificacao)
+    - Sem internet + estava autenticado -> permite com cache
+    - Sem senha salva -> pede senha
     """
     saved_pass = ADDON.getSetting('client_pass')
+    estava_autenticado = is_authenticated()
 
     if not saved_pass:
         # Nunca fez login: pede senha
         return ask_client_password()
 
-    # Tem senha salva: verifica online
+    # Tem senha salva: consulta GitHub
     clients = load_clients_from_github()
 
     if clients is None:
-        # Sem internet
-        if is_authenticated():
-            # Estava autenticado: permite com cache
+        # Sem internet: usa estado anterior
+        if estava_autenticado:
             return True
         else:
-            # Estava bloqueado: nao permite sem internet
-            dlg = xbmcgui.Dialog()
-            dlg.ok(
+            xbmcgui.Dialog().ok(
                 '[COLOR FFFF9900][B]SEM CONEXAO[/B][/COLOR]',
                 '[COLOR FFCCCCCC]Nao foi possivel verificar seu acesso.[/COLOR]\n\n'
                 '[COLOR FF888888]Verifique sua conexao com a internet.[/COLOR]'
             )
             return False
 
-    # Conseguiu conectar: verifica status
+    # Conseguiu conectar: verifica status atual
     for client in clients:
         if client.get('password', '') == saved_pass:
+            nome = client.get('name', 'CLIENTE')
             if client.get('active', True):
-                # Ativo: libera acesso
-                ADDON.setSetting('auth_ok', '1')
-                ADDON.setSetting('client_name', client.get('name', 'CLIENTE'))
-                if not is_authenticated():
-                    # Era bloqueado e foi reativado: mostra boas-vindas
-                    dlg = xbmcgui.Dialog()
-                    dlg.ok(
+                # ATIVO: libera acesso
+                if not estava_autenticado:
+                    # Estava bloqueado e foi reativado: mostra boas-vindas
+                    xbmcgui.Dialog().ok(
                         '[COLOR FF00CC44][B]ACESSO LIBERADO![/B][/COLOR]',
                         '[COLOR FFCCCCCC]Bem-vindo,[/COLOR] [COLOR FFFFD700][B]{}[/B][/COLOR][COLOR FFCCCCCC]![/COLOR]\n\n'
-                        '[COLOR FF888888]Aproveite o melhor do streaming.[/COLOR]'.format(client.get('name', 'CLIENTE'))
+                        '[COLOR FF888888]Aproveite o melhor do streaming.[/COLOR]'.format(nome)
                     )
+                ADDON.setSetting('auth_ok', '1')
+                ADDON.setSetting('client_name', nome)
                 return True
             else:
-                # Bloqueado: marca como nao autenticado mas MANTEM senha salva
+                # BLOQUEADO: remove autenticacao mas MANTEM senha para proxima verificacao
                 ADDON.setSetting('auth_ok', '0')
-                # NAO apaga client_pass para que na proxima abertura verifique novamente
-                dlg = xbmcgui.Dialog()
-                dlg.ok(
+                xbmcgui.Dialog().ok(
                     '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
                     '[COLOR FFCC0000]Sua senha foi bloqueada pelo administrador.[/COLOR]\n\n'
                     '[COLOR FFCCCCCC]Entre em contato para regularizar seu acesso.[/COLOR]'
                 )
                 return False
 
-    # Senha nao encontrada no clients.json (removida pelo admin)
+    # Senha nao encontrada no clients.json: pede nova senha
     ADDON.setSetting('auth_ok', '0')
     ADDON.setSetting('client_pass', '')
     ADDON.setSetting('client_name', '')
