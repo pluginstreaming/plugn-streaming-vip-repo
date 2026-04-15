@@ -304,79 +304,31 @@ def get_client_name():
 
 def ensure_auth():
     """
-    Verifica autenticacao a cada abertura:
-    - Se ja tem senha salva, re-verifica online se ainda esta ativo
-    - Se bloqueado online, desloga e pede senha novamente
-    - Se desbloqueado, ao digitar a senha correta entra normalmente
-    - Se sem internet, permite acesso com cache
-    - Se nao tem senha salva, pede a senha
+    Verifica autenticacao a cada abertura.
+    Logica simplificada:
+    1. Se tem senha salva -> verifica online
+       - ativo=true  -> libera acesso
+       - ativo=false -> mostra bloqueado, MANTEM senha salva para proxima verificacao
+    2. Se nao tem senha salva -> pede senha
+    3. Sem internet + autenticado -> permite com cache
+    4. Sem internet + nao autenticado -> bloqueia
     """
     saved_pass = ADDON.getSetting('client_pass')
-    if is_authenticated() and saved_pass:
-        # Re-verifica online se o cliente ainda esta ativo
-        clients = load_clients_from_github()
-        if clients is not None:
-            # Conseguiu conectar: verifica status atual
-            found = False
-            for client in clients:
-                if client.get('password', '') == saved_pass:
-                    found = True
-                    if not client.get('active', True):
-                        # Bloqueado pelo admin: limpa sessao e pede senha
-                        ADDON.setSetting('auth_ok', '0')
-                        ADDON.setSetting('client_pass', '')
-                        ADDON.setSetting('client_name', '')
-                        dlg = xbmcgui.Dialog()
-                        dlg.ok(
-                            '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
-                            '[COLOR FFCC0000]Sua senha foi bloqueada pelo administrador.[/COLOR]\n\n'
-                            '[COLOR FFCCCCCC]Entre em contato para regularizar seu acesso.[/COLOR]'
-                        )
-                        return False
-                    else:
-                        # Ainda ativo: atualiza nome e permite acesso
-                        ADDON.setSetting('client_name', client.get('name', 'CLIENTE'))
-                        return True
-            if not found:
-                # Senha nao encontrada mais (removida): pede nova senha
-                ADDON.setSetting('auth_ok', '0')
-                ADDON.setSetting('client_pass', '')
-                ADDON.setSetting('client_name', '')
-                return ask_client_password()
-        else:
-            # Sem internet: permite acesso com cache
+
+    if not saved_pass:
+        # Nunca fez login: pede senha
+        return ask_client_password()
+
+    # Tem senha salva: verifica online
+    clients = load_clients_from_github()
+
+    if clients is None:
+        # Sem internet
+        if is_authenticated():
+            # Estava autenticado: permite com cache
             return True
-    elif not is_authenticated() and saved_pass:
-        # Estava bloqueado mas tem senha salva: tenta verificar novamente
-        clients = load_clients_from_github()
-        if clients is not None:
-            for client in clients:
-                if client.get('password', '') == saved_pass:
-                    if client.get('active', True):
-                        # Reativado pelo admin: libera acesso automaticamente
-                        ADDON.setSetting('auth_ok', '1')
-                        ADDON.setSetting('client_name', client.get('name', 'CLIENTE'))
-                        dlg = xbmcgui.Dialog()
-                        dlg.ok(
-                            '[COLOR FF00CC44][B]ACESSO LIBERADO![/B][/COLOR]',
-                            '[COLOR FFCCCCCC]Bem-vindo,[/COLOR] [COLOR FFFFD700][B]{}[/B][/COLOR][COLOR FFCCCCCC]![/COLOR]\n\n'
-                            '[COLOR FF888888]Aproveite o melhor do streaming.[/COLOR]'.format(client.get('name', 'CLIENTE'))
-                        )
-                        return True
-                    else:
-                        # Ainda bloqueado
-                        dlg = xbmcgui.Dialog()
-                        dlg.ok(
-                            '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
-                            '[COLOR FFCC0000]Sua senha ainda esta bloqueada.[/COLOR]\n\n'
-                            '[COLOR FFCCCCCC]Entre em contato para regularizar seu acesso.[/COLOR]'
-                        )
-                        return False
-            # Senha nao encontrada: pede nova senha
-            ADDON.setSetting('client_pass', '')
-            return ask_client_password()
         else:
-            # Sem internet: nao permite acesso se estava bloqueado
+            # Estava bloqueado: nao permite sem internet
             dlg = xbmcgui.Dialog()
             dlg.ok(
                 '[COLOR FFFF9900][B]SEM CONEXAO[/B][/COLOR]',
@@ -384,12 +336,40 @@ def ensure_auth():
                 '[COLOR FF888888]Verifique sua conexao com a internet.[/COLOR]'
             )
             return False
-    elif is_authenticated() and not saved_pass:
-        # Estado inconsistente: pede senha novamente
-        ADDON.setSetting('auth_ok', '0')
-        return ask_client_password()
-    else:
-        return ask_client_password()
+
+    # Conseguiu conectar: verifica status
+    for client in clients:
+        if client.get('password', '') == saved_pass:
+            if client.get('active', True):
+                # Ativo: libera acesso
+                ADDON.setSetting('auth_ok', '1')
+                ADDON.setSetting('client_name', client.get('name', 'CLIENTE'))
+                if not is_authenticated():
+                    # Era bloqueado e foi reativado: mostra boas-vindas
+                    dlg = xbmcgui.Dialog()
+                    dlg.ok(
+                        '[COLOR FF00CC44][B]ACESSO LIBERADO![/B][/COLOR]',
+                        '[COLOR FFCCCCCC]Bem-vindo,[/COLOR] [COLOR FFFFD700][B]{}[/B][/COLOR][COLOR FFCCCCCC]![/COLOR]\n\n'
+                        '[COLOR FF888888]Aproveite o melhor do streaming.[/COLOR]'.format(client.get('name', 'CLIENTE'))
+                    )
+                return True
+            else:
+                # Bloqueado: marca como nao autenticado mas MANTEM senha salva
+                ADDON.setSetting('auth_ok', '0')
+                # NAO apaga client_pass para que na proxima abertura verifique novamente
+                dlg = xbmcgui.Dialog()
+                dlg.ok(
+                    '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
+                    '[COLOR FFCC0000]Sua senha foi bloqueada pelo administrador.[/COLOR]\n\n'
+                    '[COLOR FFCCCCCC]Entre em contato para regularizar seu acesso.[/COLOR]'
+                )
+                return False
+
+    # Senha nao encontrada no clients.json (removida pelo admin)
+    ADDON.setSetting('auth_ok', '0')
+    ADDON.setSetting('client_pass', '')
+    ADDON.setSetting('client_name', '')
+    return ask_client_password()
 
 def ask_client_password():
     dlg = xbmcgui.Dialog()
