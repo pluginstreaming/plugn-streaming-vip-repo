@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.2.2
+#  Versao: 2.2.3
 # ============================================================
 import sys
 import os
@@ -109,19 +109,6 @@ def get_active_server():
 def set_active_server(num):
     ADDON.setSetting('active_server', str(num))
 
-# ============================================================
-# TIPO DE PLAYER
-# ============================================================
-def get_player_type():
-    val = ADDON.getSetting('player_type') or 'nativo'
-    return val if val in ['nativo', 'f4mtester'] else 'nativo'
-
-def set_player_type(ptype):
-    ADDON.setSetting('player_type', ptype)
-
-# ============================================================
-# ADD DIR / ADD PLAY
-# ============================================================
 def add_dir(label, url, thumb=None, fanart=None, info=None):
     li = xbmcgui.ListItem(label)
     li.setArt({
@@ -135,55 +122,19 @@ def add_dir(label, url, thumb=None, fanart=None, info=None):
     xbmcplugin.addDirectoryItem(HANDLE, url, li, True)
 
 def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fanart_img=None):
-    """
-    Adiciona um item reproduzivel ao diretorio.
-    Se o player for F4mTester, usa RunPlugin para chamar o InfinityTester
-    diretamente sem depender de resolucao de URL pelo Kodi.
-    """
-    player = get_player_type()
-
-    if player == 'f4mtester':
-        # Monta URL do InfinityTester
-        title = (info or {}).get('title', label)
-        # Remove tags de cor do titulo para a URL
-        import re
-        title_clean = re.sub(r'\[/?COLOR[^\]]*\]|\[/?B\]|\[/?I\]', '', title)
-        stype = 'live' if is_live else 'direct'
-        encoded_url   = urlparse.quote_plus(url)
-        encoded_title = urlparse.quote_plus(title_clean)
-        play_url = 'plugin://plugin.video.f4mTester/?action=play&url={}&title={}&stream_type={}'.format(
-            encoded_url, encoded_title, stype
-        )
-        li = xbmcgui.ListItem(label, path=play_url)
-        art = {
-            'icon':   thumb or ICON_MAIN,
-            'thumb':  thumb or ICON_MAIN,
-            'poster': poster or thumb or ICON_MAIN,
-            'fanart': fanart_img or FANART,
-        }
-        li.setArt(art)
-        if info:
-            li.setInfo('video', info)
-        li.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(HANDLE, play_url, li, False)
-        return
-
-    # Player nativo
-    li = xbmcgui.ListItem(label)
-    art = {
+    """Adiciona item reproduzivel usando o player nativo do Kodi."""
+    li = xbmcgui.ListItem(label, path=url)
+    li.setArt({
         'icon':   thumb or ICON_MAIN,
         'thumb':  thumb or ICON_MAIN,
         'poster': poster or thumb or ICON_MAIN,
         'fanart': fanart_img or FANART,
-    }
-    li.setArt(art)
+    })
     if info:
         li.setInfo('video', info)
     li.setProperty('IsPlayable', 'true')
     if is_live:
-        li.setProperty('inputstream.adaptive.manifest_type', 'hls')
-        li.setProperty('IsLive', 'true')
-        li.setMimeType('video/ts')
+        li.setMimeType('video/mp2t')
         li.setContentLookup(False)
     xbmcplugin.addDirectoryItem(HANDLE, url, li, False)
 
@@ -197,84 +148,6 @@ def notify(msg, icon_type=xbmcgui.NOTIFICATION_INFO, time=3000):
 
 def log(msg):
     xbmc.log('[PLUGN] ' + str(msg), xbmc.LOGINFO)
-
-# ============================================================
-# TMDB
-# ============================================================
-TMDB_CACHE = {}
-TMDB_API_KEY = '2696829a81b1b5827d515ff121700838'
-
-def clean_title(title):
-    import re
-    t = re.sub(r'\[COLOR[^\]]*\]|\[/COLOR\]|\[B\]|\[/B\]', '', title)
-    t = re.sub(r'\(\d{4}\)', '', t)
-    t = re.sub(r'\b(4K|HD|FHD|UHD|DUAL|DUBLADO|LEGENDADO|NACIONAL|ORIGINAL|S\d+E\d+)\b', '', t, flags=re.IGNORECASE)
-    return t.strip()
-
-def tmdb_search(title, year=''):
-    cache_key = (title + str(year)).lower().strip()
-    if cache_key in TMDB_CACHE:
-        return TMDB_CACHE[cache_key]
-    try:
-        clean = clean_title(title)
-        if not clean:
-            return {}
-        if not year:
-            import re
-            m = re.search(r'\((\d{4})\)', title)
-            if m:
-                year = m.group(1)
-            else:
-                m2 = re.search(r'\b(20\d{2}|19\d{2})\b', title)
-                if m2:
-                    year = m2.group(1)
-        query = urlparse.quote(clean)
-        year_param = '&year={}'.format(year) if year else ''
-        url = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR{}'.format(
-            TMDB_API_KEY, query, year_param)
-        req = urlrequest.Request(url, headers={'User-Agent': 'Kodi/19.0'})
-        with urlrequest.urlopen(req, timeout=6) as resp:
-            data = json.loads(resp.read().decode('utf-8', errors='replace'))
-        results = data.get('results', [])
-        if not results and year_param:
-            url2 = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR'.format(
-                TMDB_API_KEY, query)
-            req2 = urlrequest.Request(url2, headers={'User-Agent': 'Kodi/19.0'})
-            with urlrequest.urlopen(req2, timeout=6) as resp2:
-                data2 = json.loads(resp2.read().decode('utf-8', errors='replace'))
-            results = data2.get('results', [])
-        if not results:
-            TMDB_CACHE[cache_key] = {}
-            return {}
-        m = results[0]
-        release = m.get('release_date', '') or ''
-        yr = int(release[:4]) if release and release[:4].isdigit() else 0
-        poster_path = m.get('poster_path', '') or ''
-        poster = 'https://image.tmdb.org/t/p/w500{}'.format(poster_path) if poster_path else ''
-        rating = float(m.get('vote_average', 0) or 0)
-        genre_ids = m.get('genre_ids', [])
-        genre_map = {
-            28: 'Acao', 12: 'Aventura', 16: 'Animacao', 35: 'Comedia', 80: 'Crime',
-            99: 'Documentario', 18: 'Drama', 10751: 'Familia', 14: 'Fantasia',
-            36: 'Historia', 27: 'Terror', 10402: 'Musica', 9648: 'Misterio',
-            10749: 'Romance', 878: 'Ficcao Cientifica', 10770: 'TV Movie',
-            53: 'Thriller', 10752: 'Guerra', 37: 'Faroeste'
-        }
-        genres = ', '.join([genre_map.get(gid, '') for gid in genre_ids if gid in genre_map])
-        meta = {
-            'plot':   m.get('overview', '') or '',
-            'year':   yr,
-            'rating': rating,
-            'poster': poster,
-            'genre':  genres,
-            'title':  m.get('title', '') or '',
-        }
-        TMDB_CACHE[cache_key] = meta
-        return meta
-    except Exception as e:
-        log('TMDB error: {}'.format(str(e)))
-        TMDB_CACHE[cache_key] = {}
-        return {}
 
 # ============================================================
 # API XTREAM
@@ -310,7 +183,6 @@ def make_stream_url(stream_id, stype='live', ext='ts'):
 # AUTENTICACAO - SENHA INDIVIDUAL POR CLIENTE
 # ============================================================
 def load_clients_from_github():
-    """Baixa clients.json do GitHub. Usa timestamp para evitar cache do CDN."""
     try:
         import time
         ts = int(time.time())
@@ -324,17 +196,10 @@ def load_clients_from_github():
             data = json.loads(resp.read().decode('utf-8', errors='replace'))
         return data.get('clients', [])
     except Exception as e:
-        log('Erro ao carregar clients.json do GitHub: {}'.format(str(e)))
+        log('Erro ao carregar clients.json: {}'.format(str(e)))
         return None
 
 def check_client_password(password):
-    """
-    Verifica a senha do cliente no GitHub.
-    Retorna (True, nome) se valida e ativa,
-             (False, 'bloqueado') se senha valida mas inativa,
-             (False, 'invalida') se senha nao encontrada,
-             (False, 'offline') se nao conseguiu conectar.
-    """
     clients = load_clients_from_github()
     if clients is None:
         cached = ADDON.getSetting('client_name')
@@ -353,30 +218,16 @@ def check_client_password(password):
 def is_authenticated():
     return ADDON.getSetting('auth_ok') == '1'
 
-def get_client_name():
-    return ADDON.getSetting('client_name') or 'CLIENTE'
-
 def ensure_auth():
-    """
-    Verifica autenticacao a cada abertura.
-    - Sempre consulta o GitHub com anti-cache
-    - Se ativo=true  -> libera acesso (mostra boas-vindas se estava bloqueado)
-    - Se ativo=false -> bloqueia (mantem senha para proxima verificacao)
-    - Sem internet + estava autenticado -> permite com cache
-    - Sem senha salva -> pede senha
-    """
     saved_pass = ADDON.getSetting('client_pass')
     estava_autenticado = is_authenticated()
 
     if not saved_pass:
-        # Nunca fez login: pede senha
         return ask_client_password()
 
-    # Tem senha salva: consulta GitHub
     clients = load_clients_from_github()
 
     if clients is None:
-        # Sem internet: usa estado anterior
         if estava_autenticado:
             return True
         else:
@@ -387,14 +238,11 @@ def ensure_auth():
             )
             return False
 
-    # Conseguiu conectar: verifica status atual
     for client in clients:
         if client.get('password', '') == saved_pass:
             nome = client.get('name', 'CLIENTE')
             if client.get('active', True):
-                # ATIVO: libera acesso
                 if not estava_autenticado:
-                    # Estava bloqueado e foi reativado: mostra boas-vindas
                     xbmcgui.Dialog().ok(
                         '[COLOR FF00CC44][B]ACESSO LIBERADO![/B][/COLOR]',
                         '[COLOR FFCCCCCC]Bem-vindo,[/COLOR] [COLOR FFFFD700][B]{}[/B][/COLOR][COLOR FFCCCCCC]![/COLOR]\n\n'
@@ -404,7 +252,6 @@ def ensure_auth():
                 ADDON.setSetting('client_name', nome)
                 return True
             else:
-                # BLOQUEADO: remove autenticacao mas MANTEM senha para proxima verificacao
                 ADDON.setSetting('auth_ok', '0')
                 xbmcgui.Dialog().ok(
                     '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
@@ -413,7 +260,6 @@ def ensure_auth():
                 )
                 return False
 
-    # Senha nao encontrada no clients.json: pede nova senha
     ADDON.setSetting('auth_ok', '0')
     ADDON.setSetting('client_pass', '')
     ADDON.setSetting('client_name', '')
@@ -483,16 +329,6 @@ def show_main_menu():
     li_srv.setProperty('IsPlayable', 'false')
     xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'change_server'}), li_srv, False)
 
-    # TROCAR PLAYER
-    player = get_player_type()
-    player_label = 'NATIVO' if player == 'nativo' else 'F4MTESTER'
-    li_player = xbmcgui.ListItem(
-        '[COLOR FF00CCFF][B]>> TIPO DE PLAYER  |  ATIVO: {}[/B][/COLOR]'.format(player_label)
-    )
-    li_player.setArt({'icon': icon('iconserver'), 'thumb': icon('iconserver'), 'fanart': FANART})
-    li_player.setProperty('IsPlayable', 'false')
-    xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'change_player'}), li_player, False)
-
     # ITENS DO MENU
     items = [
         ('[COLOR FF00AAFF][B]  TV AO VIVO[/B][/COLOR]',         'live_cats',   'iconlive'),
@@ -520,25 +356,6 @@ def show_main_menu():
     xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'donation'}), li_don, False)
 
     end_dir()
-
-# ============================================================
-# TROCAR PLAYER
-# ============================================================
-def change_player():
-    dlg = xbmcgui.Dialog()
-    current = get_player_type()
-    opts = [
-        '[B]PLAYER NATIVO[/B]' + ('  [COLOR FFFFD700]<< ATIVO[/COLOR]' if current == 'nativo' else ''),
-        '[B]F4MTESTER[/B]' + ('  [COLOR FFFFD700]<< ATIVO[/COLOR]' if current == 'f4mtester' else ''),
-    ]
-    sel = dlg.select('[B]Tipo de Player[/B]', opts)
-    if sel == 0:
-        set_player_type('nativo')
-        notify('[COLOR FF00CC44]Player Nativo ativado![/COLOR]')
-    elif sel == 1:
-        set_player_type('f4mtester')
-        notify('[COLOR FF00CC44]F4MTester ativado![/COLOR]')
-    xbmc.executebuiltin('Container.Refresh')
 
 # ============================================================
 # TROCAR SERVIDOR
@@ -1061,8 +878,6 @@ def router(params):
     log('action={}'.format(action))
     if action == 'change_server':
         change_server()
-    elif action == 'change_player':
-        change_player()
     elif action == 'live_cats':
         show_live_cats()
     elif action == 'live_streams':
