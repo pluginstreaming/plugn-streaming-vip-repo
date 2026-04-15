@@ -172,57 +172,88 @@ def log(msg):
     xbmc.log('[PLUGN] ' + str(msg), xbmc.LOGINFO)
 
 # ============================================================
-# OMDb - Busca de metadados de filmes (API gratuita, sem cadastro)
+# TMDB - Busca de metadados de filmes em portugues
 # ============================================================
-OMDB_CACHE = {}
+TMDB_CACHE = {}
+TMDB_API_KEY = '2696829a81b1b5827d515ff121700838'
 
-def omdb_search(title):
-    """Busca metadados no OMDb pelo titulo. Retorna dict com plot, year, rating, poster, genre."""
+def clean_title(title):
+    """Limpa o titulo removendo tags, qualidade, ano entre parenteses etc."""
     import re
-    cache_key = title.lower().strip()
-    if cache_key in OMDB_CACHE:
-        return OMDB_CACHE[cache_key]
+    t = re.sub(r'\[COLOR[^\]]*\]|\[/COLOR\]|\[B\]|\[/B\]', '', title)
+    t = re.sub(r'\(\d{4}\)', '', t)
+    t = re.sub(r'\b(4K|HD|FHD|UHD|DUAL|DUBLADO|LEGENDADO|NACIONAL|ORIGINAL|S\d+E\d+)\b', '', t, flags=re.IGNORECASE)
+    return t.strip()
+
+def tmdb_search(title, year=''):
+    """Busca metadados no TMDB em portugues. Retorna dict com plot, year, rating, poster, genre."""
+    cache_key = (title + str(year)).lower().strip()
+    if cache_key in TMDB_CACHE:
+        return TMDB_CACHE[cache_key]
     try:
-        # Limpar o titulo: remover tags de cor, anos entre parenteses, qualidade etc.
-        clean = re.sub(r'\[COLOR[^\]]*\]|\[/COLOR\]|\[B\]|\[/B\]', '', title)
-        clean = re.sub(r'\(\d{4}\)', '', clean)
-        clean = re.sub(r'\b(4K|HD|FHD|UHD|DUAL|DUBLADO|LEGENDADO|NACIONAL|ORIGINAL|S\d+E\d+)\b', '', clean, flags=re.IGNORECASE)
-        clean = clean.strip()
+        clean = clean_title(title)
         if not clean:
             return {}
+        # Extrair ano do titulo se nao fornecido (ex: "Filme (2023)")
+        if not year:
+            import re
+            m = re.search(r'\((\d{4})\)', title)
+            if m:
+                year = m.group(1)
+            else:
+                # Tentar extrair ano do final do titulo: "Titulo 2023"
+                m2 = re.search(r'\b(20\d{2}|19\d{2})\b', title)
+                if m2:
+                    year = m2.group(1)
         query = urlparse.quote(clean)
-        url = 'http://www.omdbapi.com/?t={}&apikey=trilogy'.format(query)
+        year_param = '&year={}'.format(year) if year else ''
+        url = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR{}'.format(
+            TMDB_API_KEY, query, year_param)
         req = urlrequest.Request(url, headers={'User-Agent': 'Kodi/19.0'})
-        with urlrequest.urlopen(req, timeout=5) as resp:
+        with urlrequest.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode('utf-8', errors='replace'))
-        if data.get('Response') != 'True':
-            OMDB_CACHE[cache_key] = {}
+        results = data.get('results', [])
+        if not results:
+            # Tentar sem o ano
+            if year_param:
+                url2 = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR'.format(
+                    TMDB_API_KEY, query)
+                req2 = urlrequest.Request(url2, headers={'User-Agent': 'Kodi/19.0'})
+                with urlrequest.urlopen(req2, timeout=6) as resp2:
+                    data2 = json.loads(resp2.read().decode('utf-8', errors='replace'))
+                results = data2.get('results', [])
+        if not results:
+            TMDB_CACHE[cache_key] = {}
             return {}
-        year_str = data.get('Year', '') or ''
-        year = int(year_str[:4]) if year_str and year_str[:4].isdigit() else 0
-        rating_str = data.get('imdbRating', '') or ''
-        try:
-            rating = float(rating_str) if rating_str and rating_str != 'N/A' else 0.0
-        except Exception:
-            rating = 0.0
-        poster = data.get('Poster', '') or ''
-        if poster == 'N/A':
-            poster = ''
+        m = results[0]
+        release = m.get('release_date', '') or ''
+        yr = int(release[:4]) if release and release[:4].isdigit() else 0
+        poster_path = m.get('poster_path', '') or ''
+        poster = 'https://image.tmdb.org/t/p/w500{}'.format(poster_path) if poster_path else ''
+        rating = float(m.get('vote_average', 0) or 0)
+        # Buscar generos
+        genre_ids = m.get('genre_ids', [])
+        genre_map = {
+            28: 'Ação', 12: 'Aventura', 16: 'Animação', 35: 'Comédia', 80: 'Crime',
+            99: 'Documentário', 18: 'Drama', 10751: 'Família', 14: 'Fantasia',
+            36: 'História', 27: 'Terror', 10402: 'Música', 9648: 'Mistério',
+            10749: 'Romance', 878: 'Ficção Científica', 10770: 'TV Movie',
+            53: 'Thriller', 10752: 'Guerra', 37: 'Faroeste'
+        }
+        genres = ', '.join([genre_map.get(gid, '') for gid in genre_ids if gid in genre_map])
         meta = {
-            'plot':   data.get('Plot', '') if data.get('Plot', '') != 'N/A' else '',
-            'year':   year,
+            'plot':   m.get('overview', '') or '',
+            'year':   yr,
             'rating': rating,
             'poster': poster,
-            'genre':  data.get('Genre', '') if data.get('Genre', '') != 'N/A' else '',
-            'title':  data.get('Title', ''),
-            'director': data.get('Director', '') if data.get('Director', '') != 'N/A' else '',
-            'actors': data.get('Actors', '') if data.get('Actors', '') != 'N/A' else '',
+            'genre':  genres,
+            'title':  m.get('title', '') or '',
         }
-        OMDB_CACHE[cache_key] = meta
+        TMDB_CACHE[cache_key] = meta
         return meta
     except Exception as e:
-        log('OMDb error: {}'.format(str(e)))
-        OMDB_CACHE[cache_key] = {}
+        log('TMDB error: {}'.format(str(e)))
+        TMDB_CACHE[cache_key] = {}
         return {}
 
 # ============================================================
@@ -474,19 +505,17 @@ def show_vod_streams(cat_id):
         duration = str(movie.get('duration', '') or '')
         url      = make_stream_url(sid, 'movie', ext)
 
-        # Buscar metadados no OMDb se o servidor nao tiver sinopse
-        omdb = {}
-        if not plot or plot in ('None', 'null', ''):
-            omdb = omdb_search(name)
+        # Buscar metadados no TMDB (sinopse em portugues)
+        tmdb = tmdb_search(name, year)
 
-        # Usar dados do OMDb como fallback
-        final_plot   = plot if plot and plot not in ('None', 'null', '') else omdb.get('plot', '')
-        final_year   = year if year and year.isdigit() else str(omdb.get('year', '') or '')
-        final_rating = rating if rating and rating not in ('None', 'null', '0', '') else str(omdb.get('rating', '') or '')
-        final_poster = thumb if thumb and thumb != icon('iconmovies') else omdb.get('poster', thumb)
+        # Usar dados do TMDB como fallback
+        final_plot   = plot if plot and plot not in ('None', 'null', '') else tmdb.get('plot', '')
+        final_year   = year if year and year.isdigit() else str(tmdb.get('year', '') or '')
+        final_rating = rating if rating and rating not in ('None', 'null', '0', '') else str(tmdb.get('rating', '') or '')
+        final_poster = thumb if thumb and thumb != icon('iconmovies') else tmdb.get('poster', thumb)
         final_fanart = FANART
-        final_genre  = omdb.get('genre', '')
-        final_cast   = omdb.get('actors', '')
+        final_genre  = tmdb.get('genre', '')
+        final_cast   = ''
 
         # Label sem "None"
         if final_year and final_year.isdigit() and int(final_year) > 0:
