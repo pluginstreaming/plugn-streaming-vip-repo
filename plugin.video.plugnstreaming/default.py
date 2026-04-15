@@ -172,6 +172,60 @@ def log(msg):
     xbmc.log('[PLUGN] ' + str(msg), xbmc.LOGINFO)
 
 # ============================================================
+# OMDb - Busca de metadados de filmes (API gratuita, sem cadastro)
+# ============================================================
+OMDB_CACHE = {}
+
+def omdb_search(title):
+    """Busca metadados no OMDb pelo titulo. Retorna dict com plot, year, rating, poster, genre."""
+    import re
+    cache_key = title.lower().strip()
+    if cache_key in OMDB_CACHE:
+        return OMDB_CACHE[cache_key]
+    try:
+        # Limpar o titulo: remover tags de cor, anos entre parenteses, qualidade etc.
+        clean = re.sub(r'\[COLOR[^\]]*\]|\[/COLOR\]|\[B\]|\[/B\]', '', title)
+        clean = re.sub(r'\(\d{4}\)', '', clean)
+        clean = re.sub(r'\b(4K|HD|FHD|UHD|DUAL|DUBLADO|LEGENDADO|NACIONAL|ORIGINAL|S\d+E\d+)\b', '', clean, flags=re.IGNORECASE)
+        clean = clean.strip()
+        if not clean:
+            return {}
+        query = urlparse.quote(clean)
+        url = 'http://www.omdbapi.com/?t={}&apikey=trilogy'.format(query)
+        req = urlrequest.Request(url, headers={'User-Agent': 'Kodi/19.0'})
+        with urlrequest.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode('utf-8', errors='replace'))
+        if data.get('Response') != 'True':
+            OMDB_CACHE[cache_key] = {}
+            return {}
+        year_str = data.get('Year', '') or ''
+        year = int(year_str[:4]) if year_str and year_str[:4].isdigit() else 0
+        rating_str = data.get('imdbRating', '') or ''
+        try:
+            rating = float(rating_str) if rating_str and rating_str != 'N/A' else 0.0
+        except Exception:
+            rating = 0.0
+        poster = data.get('Poster', '') or ''
+        if poster == 'N/A':
+            poster = ''
+        meta = {
+            'plot':   data.get('Plot', '') if data.get('Plot', '') != 'N/A' else '',
+            'year':   year,
+            'rating': rating,
+            'poster': poster,
+            'genre':  data.get('Genre', '') if data.get('Genre', '') != 'N/A' else '',
+            'title':  data.get('Title', ''),
+            'director': data.get('Director', '') if data.get('Director', '') != 'N/A' else '',
+            'actors': data.get('Actors', '') if data.get('Actors', '') != 'N/A' else '',
+        }
+        OMDB_CACHE[cache_key] = meta
+        return meta
+    except Exception as e:
+        log('OMDb error: {}'.format(str(e)))
+        OMDB_CACHE[cache_key] = {}
+        return {}
+
+# ============================================================
 # API XTREAM - usa urllib (sem dependencia externa)
 # ============================================================
 def api_call(action, extra=''):
@@ -410,31 +464,55 @@ def show_vod_streams(cat_id):
         end_dir()
         return
     for movie in data:
-        sid   = str(movie.get('stream_id', ''))
-        name  = movie.get('name', 'Filme')
-        thumb = movie.get('stream_icon', '') or icon('iconmovies')
-        ext   = movie.get('container_extension', 'mp4')
-        year  = str(movie.get('year', ''))
-        plot  = str(movie.get('plot', ''))
-        rating = str(movie.get('rating', ''))
-        duration = str(movie.get('duration', ''))
-        url   = make_stream_url(sid, 'movie', ext)
-        lbl   = '[COLOR FFFF6B00]{}[/COLOR]  [COLOR FF888888]{}[/COLOR]'.format(name, year)
-        info  = {
+        sid      = str(movie.get('stream_id', ''))
+        name     = movie.get('name', 'Filme')
+        thumb    = movie.get('stream_icon', '') or icon('iconmovies')
+        ext      = movie.get('container_extension', 'mp4')
+        year     = str(movie.get('year', '') or '')
+        plot     = str(movie.get('plot', '') or '')
+        rating   = str(movie.get('rating', '') or '')
+        duration = str(movie.get('duration', '') or '')
+        url      = make_stream_url(sid, 'movie', ext)
+
+        # Buscar metadados no OMDb se o servidor nao tiver sinopse
+        omdb = {}
+        if not plot or plot in ('None', 'null', ''):
+            omdb = omdb_search(name)
+
+        # Usar dados do OMDb como fallback
+        final_plot   = plot if plot and plot not in ('None', 'null', '') else omdb.get('plot', '')
+        final_year   = year if year and year.isdigit() else str(omdb.get('year', '') or '')
+        final_rating = rating if rating and rating not in ('None', 'null', '0', '') else str(omdb.get('rating', '') or '')
+        final_poster = thumb if thumb and thumb != icon('iconmovies') else omdb.get('poster', thumb)
+        final_fanart = FANART
+        final_genre  = omdb.get('genre', '')
+        final_cast   = omdb.get('actors', '')
+
+        # Label sem "None"
+        if final_year and final_year.isdigit() and int(final_year) > 0:
+            lbl = '[COLOR FFFF6B00]{}[/COLOR]  [COLOR FF888888]({})[/COLOR]'.format(name, final_year)
+        else:
+            lbl = '[COLOR FFFF6B00]{}[/COLOR]'.format(name)
+
+        info = {
             'title': name,
-            'plot': plot,
+            'plot': final_plot,
             'mediatype': 'movie',
             'sorttitle': name,
             'originaltitle': name,
         }
+        if final_genre:
+            info['genre'] = final_genre
+        if final_cast:
+            info['cast'] = [a.strip() for a in final_cast.split(',') if a.strip()]
         try:
-            if year and year.isdigit():
-                info['year'] = int(year)
+            if final_year and str(final_year).isdigit() and int(final_year) > 0:
+                info['year'] = int(final_year)
         except Exception:
             pass
         try:
-            if rating and rating.replace('.', '').replace(',', '').isdigit():
-                info['rating'] = float(rating.replace(',', '.'))
+            if final_rating and str(final_rating).replace('.', '').replace(',', '').isdigit():
+                info['rating'] = float(str(final_rating).replace(',', '.'))
         except Exception:
             pass
         try:
@@ -442,7 +520,7 @@ def show_vod_streams(cat_id):
                 info['duration'] = int(duration)
         except Exception:
             pass
-        add_play(lbl, url, thumb=thumb, poster=thumb, fanart_img=FANART, info=info)
+        add_play(lbl, url, thumb=final_poster, poster=final_poster, fanart_img=final_fanart, info=info)
     end_dir()
 
 # ============================================================
