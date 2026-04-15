@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-<addon id="plugin.video.plugnstreaming" name="PLUGN STREAMING VIP" version="2.1.8" provider-name="PLUGN Team">
+<addon id="plugin.video.f4mTester" name="InfinityTester" version="2.0.0" provider-name="PLUGN Team">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="pt_BR">InfinityTester v2.0.0 - Player profissional para streams IPTV</summary>
+        <description lang="pt_BR">Player profissional para streams IPTV com suporte a HLS, DASH, MP4, MKV e IPTV direto. Fallback automatico entre inputstream.ffmpegdirect, inputstream.adaptive e player nativo.</description>
+        <platform>all</platform>
+        <license>GPL-3.0-only</license>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </extension>
+</addon>
+<addon id="plugin.video.plugnstreaming" name="PLUGN STREAMING VIP" version="2.1.9" provider-name="PLUGN Team">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>

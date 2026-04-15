@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.f4mTester" version="2.0.0" name="[COLOR blue]Infinity[/COLOR][COLOR white]Tester[/COLOR]" provider-name="PLUGN Team">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="pt_BR">InfinityTester v2.0.0 - Player profissional para streams IPTV</summary>
+        <summary lang="en">InfinityTester v2.0.0 - Professional IPTV stream player</summary>
+        <description lang="pt_BR">Player profissional para streams IPTV com suporte a HLS, DASH, MP4, MKV e IPTV direto. Fallback automatico entre inputstream.ffmpegdirect, inputstream.adaptive e player nativo. Desenvolvido pela equipe PLUGN.</description>
+        <description lang="en">Professional IPTV stream player with HLS, DASH, MP4, MKV and direct IPTV support. Automatic fallback between inputstream.ffmpegdirect, inputstream.adaptive and native player. Developed by PLUGN Team.</description>
+        <platform>all</platform>
+        <license>GPL-3.0-only</license>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+        <news>
+v2.0.0 (2026-04-15)
+- Reescrito do zero pela equipe PLUGN
+- Suporte a HLS, DASH, MP4, MKV, IPTV direto
+- Fallback automatico entre players
+- Codigo limpo e transparente
+- Integracao com PLUGN STREAMING VIP
+        </news>
+    </extension>
+</addon>

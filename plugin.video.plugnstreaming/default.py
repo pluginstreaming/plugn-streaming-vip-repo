@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.1.8
+#  Versao: 2.1.9
 # ============================================================
 import sys
 import os
@@ -122,6 +122,32 @@ def add_dir(label, url, thumb=None, fanart=None, info=None):
     xbmcplugin.addDirectoryItem(HANDLE, url, li, True)
 
 def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fanart_img=None):
+    # Se o player for F4mTester, redireciona para o InfinityTester
+    player = get_player_type() if 'get_player_type' in dir() else ADDON.getSetting('player_type') or 'nativo'
+    if player == 'f4mtester':
+        try:
+            from urllib.parse import quote_plus
+        except ImportError:
+            from urllib import quote_plus
+        title = (info or {}).get('title', label)
+        stype = 'live' if is_live else 'direct'
+        play_url = 'plugin://plugin.video.f4mTester/?action=play&url={}&title={}&stream_type={}'.format(
+            quote_plus(url), quote_plus(title), stype
+        )
+        li = xbmcgui.ListItem(label, path=play_url)
+        art = {
+            'icon':   thumb or ICON_MAIN,
+            'thumb':  thumb or ICON_MAIN,
+            'poster': poster or thumb or ICON_MAIN,
+            'fanart': fanart_img or FANART,
+        }
+        li.setArt(art)
+        if info:
+            li.setInfo('video', info)
+        li.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(HANDLE, play_url, li, False)
+        return
+
     li = xbmcgui.ListItem(label)
     art = {
         'icon':   thumb or ICON_MAIN,
