@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# InfinityTester v2.0.0
+# InfinityTester v2.0.1
 # Player profissional para streams IPTV - PLUGN Team
 # Codigo limpo, transparente e de codigo aberto
 
@@ -61,7 +61,7 @@ def detect_stream_type(url):
 def is_addon_enabled(addon_id):
     """Verifica se um addon esta instalado e habilitado."""
     try:
-        addon = xbmcaddon.Addon(addon_id)
+        xbmcaddon.Addon(addon_id)
         return True
     except Exception:
         return False
@@ -151,7 +151,11 @@ def build_listitem(url, title='Stream', stream_type=None):
 # REPRODUCAO PRINCIPAL
 # ============================================================
 def play_stream(url, title='Stream', stream_type=None):
-    """Reproduz um stream com o melhor player disponivel."""
+    """
+    Reproduz um stream com o melhor player disponivel.
+    Funciona tanto quando chamado diretamente (HANDLE=-1)
+    quanto quando chamado via plugin:// de outro addon (HANDLE>=0).
+    """
     if not url:
         xbmcgui.Dialog().notification(
             'InfinityTester',
@@ -161,12 +165,18 @@ def play_stream(url, title='Stream', stream_type=None):
         return
 
     url = unquote_plus(url)
-    li  = build_listitem(url, title, stream_type)
 
-    if HANDLE >= 0:
-        xbmcplugin.setResolvedUrl(HANDLE, True, li)
-    else:
-        xbmc.Player().play(url, li)
+    # Se stream_type nao foi passado ou e 'direct', detecta pela URL
+    if not stream_type or stream_type == 'direct':
+        stream_type = detect_stream_type(url)
+
+    li = build_listitem(url, title, stream_type)
+
+    log('HANDLE={} | Iniciando reproducao'.format(HANDLE))
+
+    # Sempre usa xbmc.Player().play() para garantir compatibilidade
+    # quando chamado via plugin:// de outro addon
+    xbmc.Player().play(url, li)
 
 # ============================================================
 # MENU PRINCIPAL
@@ -233,7 +243,7 @@ def test_url_dialog():
 # ============================================================
 def show_player_info():
     """Exibe informacoes sobre o player e capacidades."""
-    ffmpeg  = 'Instalado' if has_ffmpegdirect() else 'NAO instalado'
+    ffmpeg   = 'Instalado' if has_ffmpegdirect() else 'NAO instalado'
     adaptive = 'Instalado' if has_adaptive() else 'NAO instalado'
 
     msg = (

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.1.9
+#  Versao: 2.2.2
 # ============================================================
 import sys
 import os
@@ -109,6 +109,19 @@ def get_active_server():
 def set_active_server(num):
     ADDON.setSetting('active_server', str(num))
 
+# ============================================================
+# TIPO DE PLAYER
+# ============================================================
+def get_player_type():
+    val = ADDON.getSetting('player_type') or 'nativo'
+    return val if val in ['nativo', 'f4mtester'] else 'nativo'
+
+def set_player_type(ptype):
+    ADDON.setSetting('player_type', ptype)
+
+# ============================================================
+# ADD DIR / ADD PLAY
+# ============================================================
 def add_dir(label, url, thumb=None, fanart=None, info=None):
     li = xbmcgui.ListItem(label)
     li.setArt({
@@ -122,17 +135,24 @@ def add_dir(label, url, thumb=None, fanart=None, info=None):
     xbmcplugin.addDirectoryItem(HANDLE, url, li, True)
 
 def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fanart_img=None):
-    # Se o player for F4mTester, redireciona para o InfinityTester
-    player = get_player_type() if 'get_player_type' in dir() else ADDON.getSetting('player_type') or 'nativo'
+    """
+    Adiciona um item reproduzivel ao diretorio.
+    Se o player for F4mTester, usa RunPlugin para chamar o InfinityTester
+    diretamente sem depender de resolucao de URL pelo Kodi.
+    """
+    player = get_player_type()
+
     if player == 'f4mtester':
-        try:
-            from urllib.parse import quote_plus
-        except ImportError:
-            from urllib import quote_plus
+        # Monta URL do InfinityTester
         title = (info or {}).get('title', label)
+        # Remove tags de cor do titulo para a URL
+        import re
+        title_clean = re.sub(r'\[/?COLOR[^\]]*\]|\[/?B\]|\[/?I\]', '', title)
         stype = 'live' if is_live else 'direct'
+        encoded_url   = urlparse.quote_plus(url)
+        encoded_title = urlparse.quote_plus(title_clean)
         play_url = 'plugin://plugin.video.f4mTester/?action=play&url={}&title={}&stream_type={}'.format(
-            quote_plus(url), quote_plus(title), stype
+            encoded_url, encoded_title, stype
         )
         li = xbmcgui.ListItem(label, path=play_url)
         art = {
@@ -148,6 +168,7 @@ def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fana
         xbmcplugin.addDirectoryItem(HANDLE, play_url, li, False)
         return
 
+    # Player nativo
     li = xbmcgui.ListItem(label)
     art = {
         'icon':   thumb or ICON_MAIN,
@@ -503,13 +524,6 @@ def show_main_menu():
 # ============================================================
 # TROCAR PLAYER
 # ============================================================
-def get_player_type():
-    val = ADDON.getSetting('player_type') or 'nativo'
-    return val if val in ['nativo', 'f4mtester'] else 'nativo'
-
-def set_player_type(ptype):
-    ADDON.setSetting('player_type', ptype)
-
 def change_player():
     dlg = xbmcgui.Dialog()
     current = get_player_type()
