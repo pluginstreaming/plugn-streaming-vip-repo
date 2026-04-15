@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-<addon id="plugin.video.plugnstreaming" name="PLUGN STREAMING VIP" version="2.1.6" provider-name="PLUGN Team">
+<addon id="plugin.video.plugnstreaming" name="PLUGN STREAMING VIP" version="2.1.7" provider-name="PLUGN Team">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
