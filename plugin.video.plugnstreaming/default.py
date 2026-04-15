@@ -505,10 +505,14 @@ def show_vod_streams(cat_id):
         duration = str(movie.get('duration', '') or '')
         url      = make_stream_url(sid, 'movie', ext)
 
-        # Limpar campos None/null do servidor
+        # Usar dados que vem do servidor (sem busca TMDB na listagem para nao travar)
         final_plot   = plot if plot and plot not in ('None', 'null', '') else ''
         final_year   = year if year and year not in ('None', 'null', '0', '') else ''
         final_rating = rating if rating and rating not in ('None', 'null', '0', '') else ''
+        final_poster = thumb
+        final_fanart = FANART
+        final_genre  = ''
+        final_cast   = ''
 
         # Label sem "None"
         if final_year and final_year.isdigit() and int(final_year) > 0:
@@ -523,6 +527,10 @@ def show_vod_streams(cat_id):
             'sorttitle': name,
             'originaltitle': name,
         }
+        if final_genre:
+            info['genre'] = final_genre
+        if final_cast:
+            info['cast'] = [a.strip() for a in final_cast.split(',') if a.strip()]
         try:
             if final_year and str(final_year).isdigit() and int(final_year) > 0:
                 info['year'] = int(final_year)
@@ -538,78 +546,8 @@ def show_vod_streams(cat_id):
                 info['duration'] = int(duration)
         except Exception:
             pass
-
-        # Usar action vod_detail para buscar sinopse e reproduzir
-        detail_url = build_url({'action': 'vod_detail', 'stream_id': sid, 'ext': ext,
-                                'name': urlparse.quote(name), 'thumb': urlparse.quote(thumb)})
-        li = xbmcgui.ListItem(lbl)
-        li.setArt({'icon': thumb, 'thumb': thumb, 'poster': thumb, 'fanart': FANART})
-        li.setInfo('video', info)
-        li.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(HANDLE, detail_url, li, False)
+        add_play(lbl, url, thumb=final_poster, poster=final_poster, fanart_img=final_fanart, info=info)
     end_dir()
-
-def play_vod(stream_id, ext, name, thumb):
-    """Busca detalhes do filme via API e reproduz com sinopse."""
-    name = urlparse.unquote(name)
-    thumb = urlparse.unquote(thumb)
-    url = make_stream_url(stream_id, 'movie', ext)
-
-    # Buscar detalhes do filme via API Xtream (get_vod_info)
-    plot = ''
-    year = 0
-    rating = 0.0
-    genre = ''
-    duration = 0
-    poster = thumb
-    try:
-        info_data = api_call('get_vod_info', '&vod_id={}'.format(stream_id))
-        if info_data:
-            movie_info = info_data.get('info', {})
-            plot     = str(movie_info.get('plot', '') or movie_info.get('description', '') or '')
-            yr       = str(movie_info.get('releasedate', '') or movie_info.get('year', '') or '')
-            year     = int(yr[:4]) if yr and yr[:4].isdigit() else 0
-            rating   = float(movie_info.get('rating', 0) or 0)
-            genre    = str(movie_info.get('genre', '') or '')
-            dur      = str(movie_info.get('duration_secs', '') or movie_info.get('duration', '') or '')
-            duration = int(dur) if dur and str(dur).isdigit() else 0
-            bg_img   = movie_info.get('backdrop_path', [])
-            if isinstance(bg_img, list) and bg_img:
-                poster = bg_img[0]
-            elif isinstance(bg_img, str) and bg_img:
-                poster = bg_img
-            if not poster or poster == thumb:
-                poster = movie_info.get('movie_image', '') or thumb
-    except Exception as e:
-        log('vod_info error: {}'.format(str(e)))
-
-    # Se nao tem sinopse da API, tentar TMDB
-    if not plot:
-        tmdb = tmdb_search(name, str(year) if year else '')
-        plot   = tmdb.get('plot', '')
-        if not year:
-            year = tmdb.get('year', 0)
-        if not rating:
-            rating = tmdb.get('rating', 0.0)
-        if not genre:
-            genre = tmdb.get('genre', '')
-        if not poster or poster == thumb:
-            poster = tmdb.get('poster', thumb)
-
-    li = xbmcgui.ListItem(name)
-    li.setArt({'icon': poster, 'thumb': poster, 'poster': poster, 'fanart': FANART})
-    vinfo = {'title': name, 'plot': plot, 'mediatype': 'movie'}
-    if year:
-        vinfo['year'] = year
-    if rating:
-        vinfo['rating'] = rating
-    if genre:
-        vinfo['genre'] = genre
-    if duration:
-        vinfo['duration'] = duration
-    li.setInfo('video', vinfo)
-    li.setProperty('IsPlayable', 'true')
-    xbmcplugin.setResolvedUrl(HANDLE, True, li)
 
 # ============================================================
 # SERIES
@@ -1013,9 +951,6 @@ def router(params):
         show_vod_cats()
     elif action == 'vod_streams':
         show_vod_streams(params.get('cat_id', '-1'))
-    elif action == 'vod_detail':
-        play_vod(params.get('stream_id', ''), params.get('ext', 'mp4'),
-                 params.get('name', ''), params.get('thumb', ''))
     elif action == 'series_cats':
         show_series_cats()
     elif action == 'series_list':
