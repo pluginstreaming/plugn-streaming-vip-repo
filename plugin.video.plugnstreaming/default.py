@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.1.7
+#  Versao: 2.1.8
 # ============================================================
 import sys
 import os
@@ -25,7 +25,7 @@ ICON_MAIN  = os.path.join(ADDON_PATH, 'icon.png')
 FANART     = os.path.join(ADDON_PATH, 'fanart.jpg')
 QR_CODE    = os.path.join(ADDON_PATH, 'resources', 'media', 'qrcode_pix.jpg')
 
-CLIENTS_GITHUB_URL = "https://api.github.com/repos/pluginstreaming/plugn-streaming-vip-repo/contents/plugin.video.plugnstreaming/clients.json"
+CLIENTS_GITHUB_URL = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/clients.json"
 SERVERS_GITHUB_URL = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
 
 # ============================================================
@@ -263,18 +263,18 @@ def make_stream_url(stream_id, stype='live', ext='ts'):
 # AUTENTICACAO - SENHA INDIVIDUAL POR CLIENTE
 # ============================================================
 def load_clients_from_github():
-    """Baixa clients.json via API do GitHub (sem cache, sempre atualizado)."""
+    """Baixa clients.json do GitHub. Usa timestamp para evitar cache do CDN."""
     try:
-        import base64
-        req = urlrequest.Request(CLIENTS_GITHUB_URL, headers={
-            'User-Agent': 'Kodi/19.0',
-            'Accept': 'application/vnd.github.v3+json'
+        import time
+        ts = int(time.time())
+        url = '{}?nocache={}'.format(CLIENTS_GITHUB_URL, ts)
+        req = urlrequest.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         })
         with urlrequest.urlopen(req, timeout=10) as resp:
-            api_data = json.loads(resp.read().decode('utf-8', errors='replace'))
-        # A API retorna o conteudo em base64
-        content = base64.b64decode(api_data['content']).decode('utf-8')
-        data = json.loads(content)
+            data = json.loads(resp.read().decode('utf-8', errors='replace'))
         return data.get('clients', [])
     except Exception as e:
         log('Erro ao carregar clients.json do GitHub: {}'.format(str(e)))
