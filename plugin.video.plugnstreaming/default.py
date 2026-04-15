@@ -505,16 +505,13 @@ def show_vod_streams(cat_id):
         duration = str(movie.get('duration', '') or '')
         url      = make_stream_url(sid, 'movie', ext)
 
-        # Buscar metadados no TMDB (sinopse em portugues)
-        tmdb = tmdb_search(name, year)
-
-        # Usar dados do TMDB como fallback
-        final_plot   = plot if plot and plot not in ('None', 'null', '') else tmdb.get('plot', '')
-        final_year   = year if year and year.isdigit() else str(tmdb.get('year', '') or '')
-        final_rating = rating if rating and rating not in ('None', 'null', '0', '') else str(tmdb.get('rating', '') or '')
-        final_poster = thumb if thumb and thumb != icon('iconmovies') else tmdb.get('poster', thumb)
+        # Usar dados que vem do servidor (sem busca TMDB na listagem para nao travar)
+        final_plot   = plot if plot and plot not in ('None', 'null', '') else ''
+        final_year   = year if year and year not in ('None', 'null', '0', '') else ''
+        final_rating = rating if rating and rating not in ('None', 'null', '0', '') else ''
+        final_poster = thumb
         final_fanart = FANART
-        final_genre  = tmdb.get('genre', '')
+        final_genre  = ''
         final_cast   = ''
 
         # Label sem "None"
@@ -607,14 +604,36 @@ def show_series_seasons(series_id):
     prog.create(ADDON_NAME, 'Carregando temporadas...')
     data = api_call('get_series_info', '&series_id={}'.format(series_id))
     prog.close()
-    if not data or 'seasons' not in data:
+    if not data:
         notify('Nenhuma temporada encontrada.', xbmcgui.NOTIFICATION_WARNING)
         end_dir()
         return
-    for season in data.get('seasons', []):
+    # A API pode retornar seasons diretamente ou dentro de 'info'
+    seasons = data.get('seasons', [])
+    # Se nao tem seasons, tentar descobrir pelo episodes
+    if not seasons:
+        episodes = data.get('episodes', {})
+        if episodes:
+            for snum in sorted(episodes.keys(), key=lambda x: int(x) if str(x).isdigit() else 0):
+                eps_list = episodes[snum]
+                ep_count = len(eps_list)
+                name = 'Temporada {}'.format(snum)
+                # Tentar pegar thumb do primeiro episodio
+                thumb = ''
+                if eps_list:
+                    thumb = eps_list[0].get('info', {}).get('movie_image', '') or ''
+                thumb = thumb or icon('icontvseries')
+                add_dir('[COLOR FF00CC44][B]{} ({} ep)[/B][/COLOR]'.format(name, ep_count),
+                        build_url({'action': 'series_eps', 'series_id': series_id, 'season': str(snum)}),
+                        thumb=thumb, info={'title': name, 'season': int(snum) if str(snum).isdigit() else 1, 'mediatype': 'season'})
+        else:
+            notify('Nenhuma temporada encontrada.', xbmcgui.NOTIFICATION_WARNING)
+        end_dir()
+        return
+    for season in seasons:
         snum  = season.get('season_number', 1)
         name  = season.get('name', 'Temporada {}'.format(snum))
-        thumb = season.get('cover', '') or icon('icontvseries')
+        thumb = season.get('cover', '') or season.get('cover_big', '') or icon('icontvseries')
         add_dir('[COLOR FF00CC44][B]{}[/B][/COLOR]'.format(name),
                 build_url({'action': 'series_eps', 'series_id': series_id, 'season': str(snum)}),
                 thumb=thumb, info={'title': name, 'season': snum, 'mediatype': 'season'})
