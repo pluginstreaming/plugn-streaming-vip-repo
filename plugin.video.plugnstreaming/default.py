@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.1.0
+#  Versao: 2.1.5
 # ============================================================
 import sys
 import os
@@ -263,10 +263,18 @@ def make_stream_url(stream_id, stype='live', ext='ts'):
 # AUTENTICACAO - SENHA INDIVIDUAL POR CLIENTE
 # ============================================================
 def load_clients_from_github():
-    """Baixa clients.json do GitHub para verificar senhas e status."""
+    """Baixa clients.json do GitHub para verificar senhas e status. Sem cache."""
     try:
-        req = urlrequest.Request(CLIENTS_GITHUB_URL, headers={'User-Agent': 'Kodi/19.0'})
-        with urlrequest.urlopen(req, timeout=8) as resp:
+        import time
+        # Adiciona timestamp para evitar cache do CDN do GitHub
+        url = CLIENTS_GITHUB_URL + '?t={}'.format(int(time.time()))
+        req = urlrequest.Request(url, headers={
+            'User-Agent': 'Kodi/19.0',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        })
+        with urlrequest.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode('utf-8', errors='replace'))
         return data.get('clients', [])
     except Exception as e:
