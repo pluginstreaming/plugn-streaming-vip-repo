@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.0.0
+#  Versao: 2.1.0
 # ============================================================
 import sys
 import os
@@ -17,44 +17,35 @@ import base64
 ADDON      = xbmcaddon.Addon()
 ADDON_ID   = ADDON.getAddonInfo('id')
 ADDON_PATH = ADDON.getAddonInfo('path')
-ADDON_NAME = 'PLUGN STREAMING VIP'
+ADDON_NAME = '[COLOR FF3399FF][B]PLUGN[/B][/COLOR][COLOR FFFFD700][B]STREAMING[/B][/COLOR] [COLOR FFCC0000][B]VIP[/B][/COLOR]'
 HANDLE     = int(sys.argv[1]) if len(sys.argv) > 1 else -1
 BASE_URL   = sys.argv[0] if len(sys.argv) > 0 else ''
 MEDIA_PATH = os.path.join(ADDON_PATH, 'resources', 'media')
 ICON_MAIN  = os.path.join(ADDON_PATH, 'icon.png')
 FANART     = os.path.join(ADDON_PATH, 'fanart.jpg')
+QR_CODE    = os.path.join(ADDON_PATH, 'resources', 'media', 'qrcode_pix.jpg')
 
-ACCESS_PIN = '1056'
+CLIENTS_GITHUB_URL = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/clients.json"
+SERVERS_GITHUB_URL = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
 
 # ============================================================
-# SERVIDORES - Carregados do servers.json
+# SERVIDORES
 # ============================================================
 def update_servers_from_github():
-    """Atualiza servers.json do GitHub em background"""
     try:
-        github_url = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
         servers_file = os.path.join(ADDON_PATH, 'servers.json')
-        
-        # Tentar baixar do GitHub com timeout
-        response = urlrequest.urlopen(github_url, timeout=3)
+        response = urlrequest.urlopen(SERVERS_GITHUB_URL, timeout=3)
         data = response.read().decode('utf-8')
-        
-        # Validar JSON
         json.loads(data)
-        
-        # Salvar o novo arquivo
         with open(servers_file, 'w') as f:
             f.write(data)
-        
         log('Servidores atualizados do GitHub!')
     except Exception as e:
-        log(f'Não foi possível atualizar do GitHub: {str(e)}')
-        pass
+        log('Erro ao atualizar servers.json: {}'.format(str(e)))
 
 def load_servers():
-    """Carrega servidores do arquivo servers.json"""
-    servers_file = os.path.join(ADDON_PATH, 'servers.json')
     try:
+        servers_file = os.path.join(ADDON_PATH, 'servers.json')
         with open(servers_file, 'r') as f:
             data = json.load(f)
         servers_dict = {}
@@ -62,27 +53,25 @@ def load_servers():
             sid = srv.get('id', 0)
             if sid > 0 and srv.get('active', True):
                 servers_dict[sid] = {
-                    'name': srv.get('name', f'SERVIDOR {sid}'),
-                    'url': srv.get('url', ''),
+                    'name': srv.get('name', 'SERVIDOR {}'.format(sid)),
+                    'url':  srv.get('url', ''),
                     'user': srv.get('user', ''),
                     'pass': srv.get('pass', ''),
                 }
         return servers_dict if servers_dict else get_default_servers()
     except Exception as e:
-        log(f'Erro ao carregar servers.json: {str(e)}')
+        log('Erro ao carregar servers.json: {}'.format(str(e)))
         return get_default_servers()
 
 def get_default_servers():
-    """Retorna servidores padrão se servers.json não existir"""
     return {
-        1: {'name': 'SERVIDOR 1',   'url': 'http://amsplay.com:80',    'user': '898570',   'pass': 'MxCkDv'},
-        2: {'name': 'SERVIDOR 2',   'url': 'http://amsplay.com:80', 'user': '724792', 'pass': '4WHKUG'},
-        3: {'name': 'SERVIDOR 3','url': 'http://amsplay.com:80',   'user': '766763','pass': 'ScaHWe'},
-        4: {'name': 'SERVIDOR 4','url': 'http://amsplay.com:80',   'user': '9543894325','pass': 'secure'},
-        5: {'name': 'SERVIDOR 5','url': 'http://amsplay.com:80',   'user': '251265','pass': '7WCG69'},
+        1: {'name': 'SERVIDOR 1', 'url': 'http://amsplay.com:80', 'user': '898570',     'pass': 'MxCkDv'},
+        2: {'name': 'SERVIDOR 2', 'url': 'http://amsplay.com:80', 'user': '724792',     'pass': '4WHKUG'},
+        3: {'name': 'SERVIDOR 3', 'url': 'http://amsplay.com:80', 'user': '766763',     'pass': 'ScaHWe'},
+        4: {'name': 'SERVIDOR 4', 'url': 'http://amsplay.com:80', 'user': '9543894325', 'pass': 'secure'},
+        5: {'name': 'SERVIDOR 5', 'url': 'http://amsplay.com:80', 'user': '251265',     'pass': '7WCG69'},
     }
 
-# Atualizar do GitHub em background (sem bloquear)
 try:
     update_servers_from_github()
 except:
@@ -121,7 +110,6 @@ def set_active_server(num):
     ADDON.setSetting('active_server', str(num))
 
 def add_dir(label, url, thumb=None, fanart=None, info=None):
-    """Adiciona item de diretorio (pasta)."""
     li = xbmcgui.ListItem(label)
     li.setArt({
         'icon':   thumb or ICON_MAIN,
@@ -134,10 +122,7 @@ def add_dir(label, url, thumb=None, fanart=None, info=None):
     xbmcplugin.addDirectoryItem(HANDLE, url, li, True)
 
 def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fanart_img=None):
-    """Adiciona item reproduzivel com informações detalhadas."""
     li = xbmcgui.ListItem(label)
-    
-    # Configurar arte com poster se disponível
     art = {
         'icon':   thumb or ICON_MAIN,
         'thumb':  thumb or ICON_MAIN,
@@ -145,19 +130,14 @@ def add_play(label, url, thumb=None, info=None, is_live=False, poster=None, fana
         'fanart': fanart_img or FANART,
     }
     li.setArt(art)
-    
     if info:
         li.setInfo('video', info)
-    
     li.setProperty('IsPlayable', 'true')
-    
-    # Para streams ao vivo: desabilita timeout e marca como live
     if is_live:
         li.setProperty('inputstream.adaptive.manifest_type', 'hls')
         li.setProperty('IsLive', 'true')
         li.setMimeType('video/ts')
         li.setContentLookup(False)
-    
     xbmcplugin.addDirectoryItem(HANDLE, url, li, False)
 
 def end_dir(sort=False):
@@ -172,13 +152,12 @@ def log(msg):
     xbmc.log('[PLUGN] ' + str(msg), xbmc.LOGINFO)
 
 # ============================================================
-# TMDB - Busca de metadados de filmes em portugues
+# TMDB
 # ============================================================
 TMDB_CACHE = {}
 TMDB_API_KEY = '2696829a81b1b5827d515ff121700838'
 
 def clean_title(title):
-    """Limpa o titulo removendo tags, qualidade, ano entre parenteses etc."""
     import re
     t = re.sub(r'\[COLOR[^\]]*\]|\[/COLOR\]|\[B\]|\[/B\]', '', title)
     t = re.sub(r'\(\d{4}\)', '', t)
@@ -186,7 +165,6 @@ def clean_title(title):
     return t.strip()
 
 def tmdb_search(title, year=''):
-    """Busca metadados no TMDB em portugues. Retorna dict com plot, year, rating, poster, genre."""
     cache_key = (title + str(year)).lower().strip()
     if cache_key in TMDB_CACHE:
         return TMDB_CACHE[cache_key]
@@ -194,14 +172,12 @@ def tmdb_search(title, year=''):
         clean = clean_title(title)
         if not clean:
             return {}
-        # Extrair ano do titulo se nao fornecido (ex: "Filme (2023)")
         if not year:
             import re
             m = re.search(r'\((\d{4})\)', title)
             if m:
                 year = m.group(1)
             else:
-                # Tentar extrair ano do final do titulo: "Titulo 2023"
                 m2 = re.search(r'\b(20\d{2}|19\d{2})\b', title)
                 if m2:
                     year = m2.group(1)
@@ -213,15 +189,13 @@ def tmdb_search(title, year=''):
         with urlrequest.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode('utf-8', errors='replace'))
         results = data.get('results', [])
-        if not results:
-            # Tentar sem o ano
-            if year_param:
-                url2 = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR'.format(
-                    TMDB_API_KEY, query)
-                req2 = urlrequest.Request(url2, headers={'User-Agent': 'Kodi/19.0'})
-                with urlrequest.urlopen(req2, timeout=6) as resp2:
-                    data2 = json.loads(resp2.read().decode('utf-8', errors='replace'))
-                results = data2.get('results', [])
+        if not results and year_param:
+            url2 = 'https://api.themoviedb.org/3/search/movie?api_key={}&query={}&language=pt-BR'.format(
+                TMDB_API_KEY, query)
+            req2 = urlrequest.Request(url2, headers={'User-Agent': 'Kodi/19.0'})
+            with urlrequest.urlopen(req2, timeout=6) as resp2:
+                data2 = json.loads(resp2.read().decode('utf-8', errors='replace'))
+            results = data2.get('results', [])
         if not results:
             TMDB_CACHE[cache_key] = {}
             return {}
@@ -231,13 +205,12 @@ def tmdb_search(title, year=''):
         poster_path = m.get('poster_path', '') or ''
         poster = 'https://image.tmdb.org/t/p/w500{}'.format(poster_path) if poster_path else ''
         rating = float(m.get('vote_average', 0) or 0)
-        # Buscar generos
         genre_ids = m.get('genre_ids', [])
         genre_map = {
-            28: 'Ação', 12: 'Aventura', 16: 'Animação', 35: 'Comédia', 80: 'Crime',
-            99: 'Documentário', 18: 'Drama', 10751: 'Família', 14: 'Fantasia',
-            36: 'História', 27: 'Terror', 10402: 'Música', 9648: 'Mistério',
-            10749: 'Romance', 878: 'Ficção Científica', 10770: 'TV Movie',
+            28: 'Acao', 12: 'Aventura', 16: 'Animacao', 35: 'Comedia', 80: 'Crime',
+            99: 'Documentario', 18: 'Drama', 10751: 'Familia', 14: 'Fantasia',
+            36: 'Historia', 27: 'Terror', 10402: 'Musica', 9648: 'Misterio',
+            10749: 'Romance', 878: 'Ficcao Cientifica', 10770: 'TV Movie',
             53: 'Thriller', 10752: 'Guerra', 37: 'Faroeste'
         }
         genres = ', '.join([genre_map.get(gid, '') for gid in genre_ids if gid in genre_map])
@@ -257,7 +230,7 @@ def tmdb_search(title, year=''):
         return {}
 
 # ============================================================
-# API XTREAM - usa urllib (sem dependencia externa)
+# API XTREAM
 # ============================================================
 def api_call(action, extra=''):
     srv = get_active_server()
@@ -287,31 +260,100 @@ def make_stream_url(stream_id, stype='live', ext='ts'):
     return ''
 
 # ============================================================
-# AUTENTICACAO - PIN UNICO
+# AUTENTICACAO - SENHA INDIVIDUAL POR CLIENTE
 # ============================================================
-def check_pin_done():
-    return ADDON.getSetting('pin_ok') == '1'
+def load_clients_from_github():
+    """Baixa clients.json do GitHub para verificar senhas e status."""
+    try:
+        req = urlrequest.Request(CLIENTS_GITHUB_URL, headers={'User-Agent': 'Kodi/19.0'})
+        with urlrequest.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode('utf-8', errors='replace'))
+        return data.get('clients', [])
+    except Exception as e:
+        log('Erro ao carregar clients.json do GitHub: {}'.format(str(e)))
+        return None
 
-def ask_pin():
-    dlg = xbmcgui.Dialog()
-    dlg.ok(
-        '[B][COLOR FF00AAFF]PLUGN STREAMING VIP[/COLOR][/B]',
-        '[COLOR FFCCCCCC]Bem-vindo! Digite o PIN de acesso para continuar.[/COLOR]'
-    )
-    pin = dlg.input('[B]PIN de Acesso[/B]', type=xbmcgui.INPUT_NUMERIC)
-    if pin == ACCESS_PIN:
-        ADDON.setSetting('pin_ok', '1')
-        notify('[COLOR FF00CC44]Acesso liberado! Bem-vindo![/COLOR]')
-        return True
-    elif pin:
-        dlg.ok('[COLOR FFCC0000][B]ACESSO NEGADO[/B][/COLOR]',
-               '[COLOR FFCC0000]PIN incorreto. Tente novamente.[/COLOR]')
-    return False
+def check_client_password(password):
+    """
+    Verifica a senha do cliente no GitHub.
+    Retorna (True, nome) se valida e ativa,
+             (False, 'bloqueado') se senha valida mas inativa,
+             (False, 'invalida') se senha nao encontrada,
+             (False, 'offline') se nao conseguiu conectar.
+    """
+    clients = load_clients_from_github()
+    if clients is None:
+        cached = ADDON.getSetting('client_name')
+        cached_pass = ADDON.getSetting('client_pass')
+        if cached and cached_pass == password:
+            return True, cached
+        return False, 'offline'
+    for client in clients:
+        if client.get('password', '') == password:
+            if client.get('active', True):
+                return True, client.get('name', 'CLIENTE')
+            else:
+                return False, 'bloqueado'
+    return False, 'invalida'
+
+def is_authenticated():
+    return ADDON.getSetting('auth_ok') == '1'
+
+def get_client_name():
+    return ADDON.getSetting('client_name') or 'CLIENTE'
 
 def ensure_auth():
-    if check_pin_done():
+    if is_authenticated():
         return True
-    return ask_pin()
+    return ask_client_password()
+
+def ask_client_password():
+    dlg = xbmcgui.Dialog()
+    dlg.ok(
+        '[COLOR FF3399FF][B]PLUGN[/B][/COLOR][COLOR FFFFD700][B]STREAMING[/B][/COLOR] [COLOR FFCC0000][B]VIP[/B][/COLOR]',
+        '[COLOR FFCCCCCC]Bem-vindo! Digite sua senha de acesso para continuar.[/COLOR]\n\n'
+        '[COLOR FF888888]Cada cliente possui uma senha individual exclusiva.[/COLOR]'
+    )
+    password = dlg.input('[B]Senha de Acesso[/B]', type=xbmcgui.INPUT_ALPHANUM)
+    if not password:
+        return False
+    prog = xbmcgui.DialogProgress()
+    prog.create(
+        '[COLOR FF3399FF][B]PLUGN[/B][/COLOR][COLOR FFFFD700][B]STREAMING[/B][/COLOR] [COLOR FFCC0000][B]VIP[/B][/COLOR]',
+        'Verificando acesso...'
+    )
+    prog.update(50, 'Consultando servidor de licencas...')
+    ok, result = check_client_password(password)
+    prog.close()
+    if ok:
+        ADDON.setSetting('auth_ok', '1')
+        ADDON.setSetting('client_name', result)
+        ADDON.setSetting('client_pass', password)
+        dlg.ok(
+            '[COLOR FF00CC44][B]ACESSO LIBERADO![/B][/COLOR]',
+            '[COLOR FFCCCCCC]Bem-vindo,[/COLOR] [COLOR FFFFD700][B]{}[/B][/COLOR][COLOR FFCCCCCC]![/COLOR]\n\n'
+            '[COLOR FF888888]Aproveite o melhor do streaming.[/COLOR]'.format(result)
+        )
+        return True
+    elif result == 'bloqueado':
+        dlg.ok(
+            '[COLOR FFCC0000][B]ACESSO BLOQUEADO[/B][/COLOR]',
+            '[COLOR FFCC0000]Sua senha foi bloqueada pelo administrador.[/COLOR]\n\n'
+            '[COLOR FFCCCCCC]Entre em contato para regularizar seu acesso.[/COLOR]'
+        )
+    elif result == 'offline':
+        dlg.ok(
+            '[COLOR FFFF9900][B]SEM CONEXAO[/B][/COLOR]',
+            '[COLOR FFCCCCCC]Nao foi possivel verificar sua senha online.[/COLOR]\n\n'
+            '[COLOR FF888888]Verifique sua conexao com a internet.[/COLOR]'
+        )
+    else:
+        dlg.ok(
+            '[COLOR FFCC0000][B]SENHA INVALIDA[/B][/COLOR]',
+            '[COLOR FFCC0000]Senha nao encontrada.[/COLOR]\n\n'
+            '[COLOR FFCCCCCC]Verifique sua senha e tente novamente.[/COLOR]'
+        )
+    return False
 
 # ============================================================
 # MENU PRINCIPAL
@@ -319,7 +361,6 @@ def ensure_auth():
 def show_main_menu():
     xbmcplugin.setPluginCategory(HANDLE, ADDON_NAME)
     xbmcplugin.setContent(HANDLE, 'files')
-
     srv = get_active_server()
 
     # TROCAR SERVIDOR
@@ -328,12 +369,7 @@ def show_main_menu():
     )
     li_srv.setArt({'icon': icon('iconserver'), 'thumb': icon('iconserver'), 'fanart': FANART})
     li_srv.setProperty('IsPlayable', 'false')
-    xbmcplugin.addDirectoryItem(
-        HANDLE,
-        build_url({'action': 'change_server'}),
-        li_srv,
-        False
-    )
+    xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'change_server'}), li_srv, False)
 
     # TROCAR PLAYER
     player = get_player_type()
@@ -343,14 +379,9 @@ def show_main_menu():
     )
     li_player.setArt({'icon': icon('iconserver'), 'thumb': icon('iconserver'), 'fanart': FANART})
     li_player.setProperty('IsPlayable', 'false')
-    xbmcplugin.addDirectoryItem(
-        HANDLE,
-        build_url({'action': 'change_player'}),
-        li_player,
-        False
-    )
+    xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'change_player'}), li_player, False)
 
-    # MENU PRINCIPAL
+    # ITENS DO MENU
     items = [
         ('[COLOR FF00AAFF][B]  TV AO VIVO[/B][/COLOR]',         'live_cats',   'iconlive'),
         ('[COLOR FFFF6B00][B]  FILMES[/B][/COLOR]',              'vod_cats',    'iconmovies'),
@@ -361,26 +392,34 @@ def show_main_menu():
         ('[COLOR FFCCCCCC][B]  MINHA CONTA[/B][/COLOR]',         'account',     'iconaccount'),
         ('[COLOR FFFF4444][B]  LIMPAR CACHE[/B][/COLOR]',        'clear_cache', 'iconcache'),
     ]
-
     for label, action, ico in items:
         add_dir(label, build_url({'action': action}), thumb=icon(ico))
+
+    # FAZER DOACAO
+    li_don = xbmcgui.ListItem(
+        '[COLOR FFFF4444][B]  FAZER DOACAO[/B][/COLOR]  [COLOR FFCCCCCC]- Apoie o projeto![/COLOR]'
+    )
+    li_don.setArt({
+        'icon':   icon('icondonation'),
+        'thumb':  icon('icondonation'),
+        'fanart': FANART,
+    })
+    li_don.setProperty('IsPlayable', 'false')
+    xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'donation'}), li_don, False)
 
     end_dir()
 
 # ============================================================
-# TROCAR PLAYER (NATIVO / F4MTESTER)
+# TROCAR PLAYER
 # ============================================================
 def get_player_type():
-    """Retorna tipo de player salvo (nativo ou f4mtester)"""
     val = ADDON.getSetting('player_type') or 'nativo'
     return val if val in ['nativo', 'f4mtester'] else 'nativo'
 
 def set_player_type(ptype):
-    """Salva tipo de player"""
     ADDON.setSetting('player_type', ptype)
 
 def change_player():
-    """Menu para trocar tipo de player"""
     dlg = xbmcgui.Dialog()
     current = get_player_type()
     opts = [
@@ -403,15 +442,38 @@ def change_server():
     dlg = xbmcgui.Dialog()
     current = get_active_server_num()
     opts = []
-    for n, s in SERVERS.items():
+    keys = list(SERVERS.keys())
+    for n in keys:
+        s = SERVERS[n]
         mark = '  [COLOR FFFFD700][B]<< ATIVO[/B][/COLOR]' if n == current else ''
         opts.append('[B]{}[/B]{}'.format(s['name'], mark))
     sel = dlg.select('[B]Selecionar Servidor[/B]', opts)
     if sel >= 0:
-        new_num = sel + 1
+        new_num = keys[sel]
         set_active_server(new_num)
         notify('[COLOR FF00CC44]Servidor: {}[/COLOR]'.format(SERVERS[new_num]['name']))
     xbmc.executebuiltin('Container.Refresh')
+
+# ============================================================
+# DOACAO - Exibe QR Code Pix
+# ============================================================
+def show_donation():
+    dlg = xbmcgui.Dialog()
+    if os.path.exists(QR_CODE):
+        dlg.ok(
+            '[COLOR FFFF4444][B]FAZER DOACAO - PIX[/B][/COLOR]',
+            '[COLOR FFCCCCCC]Escaneie o QR Code com seu app de banco:[/COLOR]\n\n'
+            '[COLOR FFFFD700][B]Obrigado pelo seu apoio![/B][/COLOR]\n'
+            '[COLOR FF888888]Sua contribuicao mantem o projeto ativo.[/COLOR]'
+        )
+        xbmc.executebuiltin('ShowPicture({})'.format(QR_CODE))
+    else:
+        dlg.ok(
+            '[COLOR FFFF4444][B]FAZER DOACAO - PIX[/B][/COLOR]',
+            '[COLOR FFCCCCCC]Obrigado por querer contribuir![/COLOR]\n\n'
+            '[COLOR FFFFD700][B]Entre em contato com o administrador[/B][/COLOR]\n'
+            '[COLOR FF888888]para receber as informacoes de pagamento.[/COLOR]'
+        )
 
 # ============================================================
 # TV AO VIVO
@@ -504,22 +566,13 @@ def show_vod_streams(cat_id):
         rating   = str(movie.get('rating', '') or '')
         duration = str(movie.get('duration', '') or '')
         url      = make_stream_url(sid, 'movie', ext)
-
-        # Usar dados que vem do servidor (sem busca TMDB na listagem para nao travar)
         final_plot   = plot if plot and plot not in ('None', 'null', '') else ''
         final_year   = year if year and year not in ('None', 'null', '0', '') else ''
         final_rating = rating if rating and rating not in ('None', 'null', '0', '') else ''
-        final_poster = thumb
-        final_fanart = FANART
-        final_genre  = ''
-        final_cast   = ''
-
-        # Label sem "None"
         if final_year and final_year.isdigit() and int(final_year) > 0:
             lbl = '[COLOR FFFF6B00]{}[/COLOR]  [COLOR FF888888]({})[/COLOR]'.format(name, final_year)
         else:
             lbl = '[COLOR FFFF6B00]{}[/COLOR]'.format(name)
-
         info = {
             'title': name,
             'plot': final_plot,
@@ -527,10 +580,6 @@ def show_vod_streams(cat_id):
             'sorttitle': name,
             'originaltitle': name,
         }
-        if final_genre:
-            info['genre'] = final_genre
-        if final_cast:
-            info['cast'] = [a.strip() for a in final_cast.split(',') if a.strip()]
         try:
             if final_year and str(final_year).isdigit() and int(final_year) > 0:
                 info['year'] = int(final_year)
@@ -546,7 +595,7 @@ def show_vod_streams(cat_id):
                 info['duration'] = int(duration)
         except Exception:
             pass
-        add_play(lbl, url, thumb=final_poster, poster=final_poster, fanart_img=final_fanart, info=info)
+        add_play(lbl, url, thumb=thumb, poster=thumb, fanart_img=FANART, info=info)
     end_dir()
 
 # ============================================================
@@ -585,7 +634,7 @@ def show_series_list(cat_id):
         name  = s.get('name', 'Serie')
         thumb = s.get('cover', '') or icon('icontvseries')
         plot  = s.get('plot', '')
-        info = {'title': name, 'plot': plot, 'mediatype': 'tvshow'}
+        info  = {'title': name, 'plot': plot, 'mediatype': 'tvshow'}
         try:
             year = str(s.get('year', ''))
             if year and year.isdigit():
@@ -608,9 +657,7 @@ def show_series_seasons(series_id):
         notify('Nenhuma temporada encontrada.', xbmcgui.NOTIFICATION_WARNING)
         end_dir()
         return
-    # A API pode retornar seasons diretamente ou dentro de 'info'
     seasons = data.get('seasons', [])
-    # Se nao tem seasons, tentar descobrir pelo episodes
     if not seasons:
         episodes = data.get('episodes', {})
         if episodes:
@@ -618,7 +665,6 @@ def show_series_seasons(series_id):
                 eps_list = episodes[snum]
                 ep_count = len(eps_list)
                 name = 'Temporada {}'.format(snum)
-                # Tentar pegar thumb do primeiro episodio
                 thumb = ''
                 if eps_list:
                     thumb = eps_list[0].get('info', {}).get('movie_image', '') or ''
@@ -693,12 +739,10 @@ def show_epg_guide():
     end_dir()
 
 def decode_epg_field(value):
-    """Decodifica campo EPG que pode estar em Base64."""
     if not value:
         return ''
     try:
         decoded = base64.b64decode(value).decode('utf-8', errors='replace')
-        # Verifica se o resultado parece texto legivel (nao binario)
         if decoded and all(32 <= ord(c) < 127 or ord(c) > 159 for c in decoded[:20]):
             return decoded
     except Exception:
@@ -718,12 +762,10 @@ def show_epg_channel(stream_id, name):
         end_dir()
         return
     for item in data['epg_listings']:
-        # Titulos e descricoes vem em Base64 na API Xtream
         title = decode_epg_field(item.get('title', ''))
         desc  = decode_epg_field(item.get('description', ''))
         start = item.get('start', '')[:16].replace('T', ' ')
         end_t = item.get('stop', '')[:16].replace('T', ' ')
-        # Formatar hora de forma legivel (YYYY-MM-DD HH:MM -> HH:MM)
         try:
             start_fmt = start[11:16] if len(start) >= 16 else start
             end_fmt   = end_t[11:16] if len(end_t) >= 16 else end_t
@@ -750,38 +792,31 @@ def show_search():
     query = kb.getText().strip()
     if not query:
         return
-
     xbmcplugin.setPluginCategory(HANDLE, 'BUSCA: {}'.format(query))
     xbmcplugin.setContent(HANDLE, 'files')
     prog = xbmcgui.DialogProgress()
     prog.create(ADDON_NAME, 'Buscando...')
-
     results = []
     prog.update(20, 'Buscando canais...')
     live = api_call('get_live_streams') or []
     for ch in live:
         if query.lower() in ch.get('name', '').lower():
             results.append(('live', ch))
-
     prog.update(60, 'Buscando filmes...')
     vod = api_call('get_vod_streams') or []
     for m in vod:
         if query.lower() in m.get('name', '').lower():
             results.append(('movie', m))
-
     prog.update(90, 'Buscando series...')
     series = api_call('get_series') or []
     for s in series:
         if query.lower() in s.get('name', '').lower():
             results.append(('series', s))
-
     prog.close()
-
     if not results:
         notify('Nenhum resultado para: {}'.format(query), xbmcgui.NOTIFICATION_WARNING)
         end_dir()
         return
-
     for rtype, item in results[:200]:
         if rtype == 'live':
             sid   = str(item.get('stream_id', ''))
@@ -801,7 +836,6 @@ def show_search():
             name  = '[COLOR FF00CC44][SERIE][/COLOR] {}'.format(item.get('name', ''))
             thumb = item.get('cover', '') or icon('icontvseries')
             add_dir(name, build_url({'action': 'series_seasons', 'series_id': sid}), thumb=thumb)
-
     end_dir()
 
 # ============================================================
@@ -820,7 +854,6 @@ def show_account():
             d = json.loads(resp.read().decode('utf-8', errors='replace'))
         prog.close()
         ui = d.get('user_info', {})
-        si = d.get('server_info', {})
         import datetime
         exp_ts = ui.get('exp_date', '')
         try:
@@ -891,45 +924,28 @@ def do_clear_cache():
 # ATUALIZAR SERVIDORES
 # ============================================================
 def update_servers_menu():
-    """Menu para atualizar servidores do GitHub"""
     prog = xbmcgui.DialogProgress()
     prog.create(ADDON_NAME, 'Atualizando servidores do GitHub...')
-    
     try:
-        github_url = "https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/plugin.video.plugnstreaming/servers.json"
         servers_file = os.path.join(ADDON_PATH, 'servers.json')
-        
         prog.update(30, 'Conectando ao GitHub...')
-        
-        # Tentar baixar do GitHub
-        req = urlrequest.Request(github_url, headers={'User-Agent': 'Kodi/19.0'})
+        req = urlrequest.Request(SERVERS_GITHUB_URL, headers={'User-Agent': 'Kodi/19.0'})
         response = urlrequest.urlopen(req, timeout=10)
         data = response.read().decode('utf-8')
-        
         prog.update(60, 'Validando dados...')
-        
-        # Validar JSON
         json.loads(data)
-        
         prog.update(90, 'Salvando arquivo...')
-        
-        # Salvar o novo arquivo
         with open(servers_file, 'w') as f:
             f.write(data)
-        
         prog.close()
         notify('Servidores atualizados com sucesso!', xbmcgui.NOTIFICATION_INFO, 3000)
         log('Servidores atualizados do GitHub com sucesso!')
-        
-        # Recarregar os servidores
         global SERVERS
         SERVERS = load_servers()
-        
     except Exception as e:
         prog.close()
-        log(f'Erro ao atualizar servidores: {str(e)}')
-        notify(f'Erro ao atualizar: {str(e)}', xbmcgui.NOTIFICATION_ERROR, 5000)
-    
+        log('Erro ao atualizar servidores: {}'.format(str(e)))
+        notify('Erro ao atualizar: {}'.format(str(e)), xbmcgui.NOTIFICATION_ERROR, 5000)
     show_main_menu()
 
 # ============================================================
@@ -938,7 +954,6 @@ def update_servers_menu():
 def router(params):
     action = params.get('action', '')
     log('action={}'.format(action))
-
     if action == 'change_server':
         change_server()
     elif action == 'change_player':
@@ -975,6 +990,8 @@ def router(params):
         do_clear_cache()
     elif action == 'update_servers':
         update_servers_menu()
+    elif action == 'donation':
+        show_donation()
     elif action == 'none':
         pass
     else:
