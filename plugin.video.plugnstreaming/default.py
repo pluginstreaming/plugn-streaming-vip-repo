@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.2.3
+#  Versao: 2.2.4
 # ============================================================
 import sys
 import os
@@ -148,6 +148,136 @@ def notify(msg, icon_type=xbmcgui.NOTIFICATION_INFO, time=3000):
 
 def log(msg):
     xbmc.log('[PLUGN] ' + str(msg), xbmc.LOGINFO)
+
+# ============================================================
+# CONTROLE PARENTAL - CONTEUDO ADULTO
+# ============================================================
+
+# Palavras-chave que identificam categorias adultas
+ADULT_KEYWORDS = [
+    'adult', 'adulto', 'adultos', 'xxx', 'porno', 'porn', 'erotic',
+    'erotico', 'erotica', '+18', '18+', 'x-rated', 'xrated', 'hentai',
+    'sexo', 'sex', 'nude', 'nudes', 'nudez', 'playboy', 'brazzers',
+    'only fans', 'onlyfans', 'red light', 'redlight',
+]
+
+ADULT_PIN_DEFAULT = '0000'
+
+def is_adult_content(name):
+    """Verifica se o nome da categoria/conteudo e adulto."""
+    name_lower = str(name).lower()
+    for kw in ADULT_KEYWORDS:
+        if kw in name_lower:
+            return True
+    return False
+
+def get_adult_pin():
+    """Retorna o PIN adulto salvo ou o padrao 0000."""
+    pin = ADDON.getSetting('adult_pin')
+    return pin if pin else ADULT_PIN_DEFAULT
+
+def is_adult_unlocked():
+    """Verifica se o conteudo adulto ja foi desbloqueado nesta sessao."""
+    return ADDON.getSetting('adult_unlocked') == '1'
+
+def lock_adult():
+    """Bloqueia novamente o conteudo adulto."""
+    ADDON.setSetting('adult_unlocked', '0')
+
+def ask_adult_pin():
+    """
+    Solicita o PIN para conteudo adulto.
+    Retorna True se o PIN estiver correto, False caso contrario.
+    """
+    dlg = xbmcgui.Dialog()
+    pin_entered = dlg.input(
+        '[COLOR FFCC0000][B]CONTEUDO ADULTO - Digite o PIN[/B][/COLOR]',
+        type=xbmcgui.INPUT_NUMERIC
+    )
+    if not pin_entered:
+        return False
+    if pin_entered == get_adult_pin():
+        ADDON.setSetting('adult_unlocked', '1')
+        return True
+    notify(
+        '[COLOR FFCC0000]PIN incorreto! Acesso negado.[/COLOR]',
+        xbmcgui.NOTIFICATION_ERROR, 3000
+    )
+    return False
+
+def ensure_adult_access():
+    """
+    Garante acesso ao conteudo adulto.
+    Se ja desbloqueado na sessao, passa direto.
+    Caso contrario, solicita o PIN.
+    """
+    if is_adult_unlocked():
+        return True
+    return ask_adult_pin()
+
+def change_adult_pin():
+    """Permite ao cliente alterar o PIN adulto."""
+    dlg = xbmcgui.Dialog()
+    # Verificar PIN atual primeiro
+    current = dlg.input(
+        '[COLOR FFFFD700][B]Digite o PIN atual[/B][/COLOR]',
+        type=xbmcgui.INPUT_NUMERIC
+    )
+    if not current:
+        return
+    if current != get_adult_pin():
+        dlg.ok(
+            '[COLOR FFCC0000][B]PIN INCORRETO[/B][/COLOR]',
+            '[COLOR FFCCCCCC]O PIN atual informado esta incorreto.[/COLOR]'
+        )
+        return
+    # Solicitar novo PIN
+    new_pin = dlg.input(
+        '[COLOR FF00CC44][B]Digite o novo PIN (4 digitos)[/B][/COLOR]',
+        type=xbmcgui.INPUT_NUMERIC
+    )
+    if not new_pin:
+        return
+    if len(new_pin) < 4:
+        dlg.ok(
+            '[COLOR FFCC0000][B]PIN INVALIDO[/B][/COLOR]',
+            '[COLOR FFCCCCCC]O PIN deve ter pelo menos 4 digitos.[/COLOR]'
+        )
+        return
+    # Confirmar novo PIN
+    confirm_pin = dlg.input(
+        '[COLOR FF00CC44][B]Confirme o novo PIN[/B][/COLOR]',
+        type=xbmcgui.INPUT_NUMERIC
+    )
+    if new_pin != confirm_pin:
+        dlg.ok(
+            '[COLOR FFCC0000][B]PINS NAO CONFEREM[/B][/COLOR]',
+            '[COLOR FFCCCCCC]Os PINs digitados sao diferentes. Tente novamente.[/COLOR]'
+        )
+        return
+    ADDON.setSetting('adult_pin', new_pin)
+    lock_adult()
+    dlg.ok(
+        '[COLOR FF00CC44][B]PIN ALTERADO![/B][/COLOR]',
+        '[COLOR FFCCCCCC]Seu novo PIN adulto foi salvo com sucesso.[/COLOR]'
+    )
+
+def show_adult_settings():
+    """Submenu de configuracoes do controle parental."""
+    dlg = xbmcgui.Dialog()
+    opts = [
+        '[COLOR FFFFD700][B]Alterar PIN adulto[/B][/COLOR]',
+        '[COLOR FFCC0000][B]Bloquear conteudo adulto agora[/B][/COLOR]',
+        '[COLOR FF00AAFF][B]Desbloquear conteudo adulto[/B][/COLOR]',
+    ]
+    sel = dlg.select('[COLOR FFCC0000][B]CONTROLE PARENTAL[/B][/COLOR]', opts)
+    if sel == 0:
+        change_adult_pin()
+    elif sel == 1:
+        lock_adult()
+        notify('[COLOR FF00CC44]Conteudo adulto bloqueado.[/COLOR]')
+    elif sel == 2:
+        ask_adult_pin()
 
 # ============================================================
 # API XTREAM
@@ -343,6 +473,18 @@ def show_main_menu():
     for label, action, ico in items:
         add_dir(label, build_url({'action': action}), thumb=icon(ico))
 
+    # CONTROLE PARENTAL
+    li_adult = xbmcgui.ListItem(
+        '[COLOR FFCC0000][B]  CONTROLE PARENTAL[/B][/COLOR]  [COLOR FF888888]- PIN adulto[/COLOR]'
+    )
+    li_adult.setArt({
+        'icon':   icon('iconaccount'),
+        'thumb':  icon('iconaccount'),
+        'fanart': FANART,
+    })
+    li_adult.setProperty('IsPlayable', 'false')
+    xbmcplugin.addDirectoryItem(HANDLE, build_url({'action': 'adult_settings'}), li_adult, False)
+
     # FAZER DOACAO
     li_don = xbmcgui.ListItem(
         '[COLOR FFFF4444][B]  FAZER DOACAO[/B][/COLOR]  [COLOR FFCCCCCC]- Apoie o projeto![/COLOR]'
@@ -414,9 +556,15 @@ def show_live_cats():
     add_dir('[COLOR FFFFD700][B]>> TODOS OS CANAIS[/B][/COLOR]',
             build_url({'action': 'live_streams', 'cat_id': '-1'}), thumb=icon('iconlive'))
     for cat in data:
-        add_dir('[COLOR FF00AAFF]{}[/COLOR]'.format(cat.get('category_name', 'Sem nome')),
-                build_url({'action': 'live_streams', 'cat_id': str(cat.get('category_id', ''))}),
-                thumb=icon('iconlive'))
+        cat_name = cat.get('category_name', 'Sem nome')
+        cat_id   = str(cat.get('category_id', ''))
+        if is_adult_content(cat_name):
+            lbl = '[COLOR FFCC0000][B]  [+18] {}[/B][/COLOR]'.format(cat_name)
+            url = build_url({'action': 'adult_gate', 'next': 'live_streams', 'cat_id': cat_id})
+        else:
+            lbl = '[COLOR FF00AAFF]{}[/COLOR]'.format(cat_name)
+            url = build_url({'action': 'live_streams', 'cat_id': cat_id})
+        add_dir(lbl, url, thumb=icon('iconlive'))
     end_dir()
 
 def show_live_streams(cat_id):
@@ -459,9 +607,15 @@ def show_vod_cats():
     add_dir('[COLOR FFFFD700][B]>> TODOS OS FILMES[/B][/COLOR]',
             build_url({'action': 'vod_streams', 'cat_id': '-1'}), thumb=icon('iconmovies'))
     for cat in data:
-        add_dir('[COLOR FFFF6B00]{}[/COLOR]'.format(cat.get('category_name', 'Sem nome')),
-                build_url({'action': 'vod_streams', 'cat_id': str(cat.get('category_id', ''))}),
-                thumb=icon('iconmovies'))
+        cat_name = cat.get('category_name', 'Sem nome')
+        cat_id   = str(cat.get('category_id', ''))
+        if is_adult_content(cat_name):
+            lbl = '[COLOR FFCC0000][B]  [+18] {}[/B][/COLOR]'.format(cat_name)
+            url = build_url({'action': 'adult_gate', 'next': 'vod_streams', 'cat_id': cat_id})
+        else:
+            lbl = '[COLOR FFFF6B00]{}[/COLOR]'.format(cat_name)
+            url = build_url({'action': 'vod_streams', 'cat_id': cat_id})
+        add_dir(lbl, url, thumb=icon('iconmovies'))
     end_dir()
 
 def show_vod_streams(cat_id):
@@ -535,10 +689,37 @@ def show_series_cats():
         end_dir()
         return
     for cat in data:
-        add_dir('[COLOR FF00CC44]{}[/COLOR]'.format(cat.get('category_name', 'Sem nome')),
-                build_url({'action': 'series_list', 'cat_id': str(cat.get('category_id', ''))}),
-                thumb=icon('icontvseries'))
+        cat_name = cat.get('category_name', 'Sem nome')
+        cat_id   = str(cat.get('category_id', ''))
+        if is_adult_content(cat_name):
+            lbl = '[COLOR FFCC0000][B]  [+18] {}[/B][/COLOR]'.format(cat_name)
+            url = build_url({'action': 'adult_gate', 'next': 'series_list', 'cat_id': cat_id})
+        else:
+            lbl = '[COLOR FF00CC44]{}[/COLOR]'.format(cat_name)
+            url = build_url({'action': 'series_list', 'cat_id': cat_id})
+        add_dir(lbl, url, thumb=icon('icontvseries'))
     end_dir()
+
+def adult_gate(params):
+    """
+    Portao de acesso adulto: verifica PIN e redireciona para a acao desejada.
+    """
+    if not ensure_adult_access():
+        return
+    next_action = params.get('next', '')
+    cat_id      = params.get('cat_id', '-1')
+    series_id   = params.get('series_id', '')
+    season      = params.get('season', '1')
+    if next_action == 'live_streams':
+        show_live_streams(cat_id)
+    elif next_action == 'vod_streams':
+        show_vod_streams(cat_id)
+    elif next_action == 'series_list':
+        show_series_list(cat_id)
+    elif next_action == 'series_seasons':
+        show_series_seasons(series_id)
+    elif next_action == 'series_eps':
+        show_series_eps(series_id, season)
 
 def show_series_list(cat_id):
     xbmcplugin.setPluginCategory(HANDLE, 'SERIES')
@@ -912,6 +1093,10 @@ def router(params):
         update_servers_menu()
     elif action == 'donation':
         show_donation()
+    elif action == 'adult_settings':
+        show_adult_settings()
+    elif action == 'adult_gate':
+        adult_gate(params)
     elif action == 'none':
         pass
     else:

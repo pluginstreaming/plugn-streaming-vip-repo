@@ -2,6 +2,8 @@
 <settings>
     <setting id="pin_ok" type="text" default="" label="PIN OK" visible="false"/>
     <setting id="active_server" type="text" default="1" label="Servidor Ativo" visible="false"/>
+    <setting id="adult_pin" type="text" default="0000" label="PIN Adulto" visible="false"/>
+    <setting id="adult_unlocked" type="text" default="0" label="Adulto Desbloqueado" visible="false"/>
     <setting label="Qualidade do Stream" type="enum" id="stream_quality" values="Auto|HD|SD" default="0"/>
     <setting label="Timeout (segundos)" type="slider" id="timeout" default="15" range="5,5,60" option="int"/>
     <setting type="sep"/>
