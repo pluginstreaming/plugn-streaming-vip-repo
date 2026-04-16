@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.2.6
+#  Versao: 2.2.7
 # ============================================================
 import sys
 import os
@@ -900,36 +900,53 @@ def show_epg_channel(stream_id, name):
 # BUSCA
 # ============================================================
 def show_search():
-    kb = xbmc.Keyboard('', '[B]Buscar em PLUGN STREAMING[/B]')
-    kb.doModal()
-    if not kb.isConfirmed():
-        return
-    query = kb.getText().strip()
+    # Usa xbmcgui.Dialog().input que e mais compativel com todas as versoes do Kodi
+    query = xbmcgui.Dialog().input(
+        '[B]Buscar em PLUGN STREAMING[/B]',
+        type=xbmcgui.INPUT_ALPHANUM
+    )
+    query = query.strip() if query else ''
     if not query:
+        # Sem query: exibir menu vazio e finalizar corretamente
+        xbmcplugin.setPluginCategory(HANDLE, 'BUSCAR')
+        xbmcplugin.setContent(HANDLE, 'files')
+        end_dir()
         return
     xbmcplugin.setPluginCategory(HANDLE, 'BUSCA: {}'.format(query))
     xbmcplugin.setContent(HANDLE, 'files')
     prog = xbmcgui.DialogProgress()
-    prog.create(ADDON_NAME, 'Buscando...')
+    prog.create(ADDON_NAME, 'Buscando por "{}"...'.format(query))
     results = []
-    prog.update(20, 'Buscando canais...')
-    live = api_call('get_live_streams') or []
-    for ch in live:
-        if query.lower() in ch.get('name', '').lower():
-            results.append(('live', ch))
-    prog.update(60, 'Buscando filmes...')
-    vod = api_call('get_vod_streams') or []
-    for m in vod:
-        if query.lower() in m.get('name', '').lower():
-            results.append(('movie', m))
-    prog.update(90, 'Buscando series...')
-    series = api_call('get_series') or []
-    for s in series:
-        if query.lower() in s.get('name', '').lower():
-            results.append(('series', s))
-    prog.close()
+    try:
+        prog.update(20, 'Buscando canais ao vivo...')
+        live = api_call('get_live_streams') or []
+        for ch in live:
+            if query.lower() in ch.get('name', '').lower():
+                results.append(('live', ch))
+        if prog.iscanceled():
+            prog.close()
+            end_dir()
+            return
+        prog.update(60, 'Buscando filmes...')
+        vod = api_call('get_vod_streams') or []
+        for m in vod:
+            if query.lower() in m.get('name', '').lower():
+                results.append(('movie', m))
+        if prog.iscanceled():
+            prog.close()
+            end_dir()
+            return
+        prog.update(90, 'Buscando series...')
+        series = api_call('get_series') or []
+        for s in series:
+            if query.lower() in s.get('name', '').lower():
+                results.append(('series', s))
+    except Exception as e:
+        log('Erro na busca: {}'.format(str(e)))
+    finally:
+        prog.close()
     if not results:
-        notify('Nenhum resultado para: {}'.format(query), xbmcgui.NOTIFICATION_WARNING)
+        notify('Nenhum resultado para: "{}"'.format(query), xbmcgui.NOTIFICATION_WARNING, 4000)
         end_dir()
         return
     for rtype, item in results[:200]:
