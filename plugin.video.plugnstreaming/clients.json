@@ -35,7 +35,7 @@
       "id": 6,
       "name": "CLIENTE 6",
       "password": "senha006",
-      "active": false
+      "active": true
     },
     {
       "id": 7,
