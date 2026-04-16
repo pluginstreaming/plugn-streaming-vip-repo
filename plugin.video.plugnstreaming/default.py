@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.2.5
+#  Versao: 2.2.6
 # ============================================================
 import sys
 import os
@@ -490,8 +490,8 @@ def show_main_menu():
         '[COLOR FFCC0000][B]  CONTROLE PARENTAL[/B][/COLOR]  [COLOR FF888888]- PIN adulto[/COLOR]'
     )
     li_adult.setArt({
-        'icon':   icon('iconaccount'),
-        'thumb':  icon('iconaccount'),
+        'icon':   icon('iconparental'),
+        'thumb':  icon('iconparental'),
         'fanart': FANART,
     })
     li_adult.setProperty('IsPlayable', 'false')
