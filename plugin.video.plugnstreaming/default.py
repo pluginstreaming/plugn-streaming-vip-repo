@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ============================================================
 #  PLUGN STREAMING VIP - Addon Kodi
-#  Versao: 2.2.4
+#  Versao: 2.2.5
 # ============================================================
 import sys
 import os
@@ -163,6 +163,13 @@ ADULT_KEYWORDS = [
 
 ADULT_PIN_DEFAULT = '0000'
 
+# Usamos xbmcgui.Window(10000) para armazenar o estado de desbloqueio
+# em MEMORIA (Home window). Essa janela existe enquanto o Kodi estiver
+# aberto e e descartada ao fechar — garantindo bloqueio automatico
+# a cada nova sessao do Kodi.
+_HOME_WIN = xbmcgui.Window(10000)
+_ADULT_UNLOCK_KEY = 'plugnstreaming_adult_unlocked'
+
 def is_adult_content(name):
     """Verifica se o nome da categoria/conteudo e adulto."""
     name_lower = str(name).lower()
@@ -177,12 +184,16 @@ def get_adult_pin():
     return pin if pin else ADULT_PIN_DEFAULT
 
 def is_adult_unlocked():
-    """Verifica se o conteudo adulto ja foi desbloqueado nesta sessao."""
-    return ADDON.getSetting('adult_unlocked') == '1'
+    """
+    Verifica se o conteudo adulto esta desbloqueado NESTA SESSAO.
+    Usa a Home Window (memoria RAM) — resetada automaticamente ao
+    fechar o Kodi.
+    """
+    return _HOME_WIN.getProperty(_ADULT_UNLOCK_KEY) == '1'
 
 def lock_adult():
-    """Bloqueia novamente o conteudo adulto."""
-    ADDON.setSetting('adult_unlocked', '0')
+    """Bloqueia o conteudo adulto imediatamente (remove da memoria)."""
+    _HOME_WIN.clearProperty(_ADULT_UNLOCK_KEY)
 
 def ask_adult_pin():
     """
@@ -197,7 +208,8 @@ def ask_adult_pin():
     if not pin_entered:
         return False
     if pin_entered == get_adult_pin():
-        ADDON.setSetting('adult_unlocked', '1')
+        # Salva APENAS em memoria — nao persiste apos fechar o Kodi
+        _HOME_WIN.setProperty(_ADULT_UNLOCK_KEY, '1')
         return True
     notify(
         '[COLOR FFCC0000]PIN incorreto! Acesso negado.[/COLOR]',
@@ -208,7 +220,7 @@ def ask_adult_pin():
 def ensure_adult_access():
     """
     Garante acesso ao conteudo adulto.
-    Se ja desbloqueado na sessao, passa direto.
+    Se ja desbloqueado na sessao (memoria), passa direto.
     Caso contrario, solicita o PIN.
     """
     if is_adult_unlocked():
