@@ -37,12 +37,12 @@
         </assets>
     </extension>
 </addon>
-<addon id="repository.plugnstreaming.vip" name="PLUGN STREAMING VIP Repository" version="1.0.0" provider-name="PLUGN Team">
+<addon id="repository.plugnstreaming.vip" name="PLUGN STREAMING VIP Repository" version="1.0.1" provider-name="PLUGN Team">
     <extension point="xbmc.addon.repository">
         <dir>
-            <info compressed="false">https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/addons.xml</info>
-            <checksum>https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/pluginstreaming/plugn-streaming-vip-repo/main/zips/</datadir>
+            <info compressed="false">https://pluginstreaming.github.io/plugn-streaming-vip-repo/addons.xml</info>
+            <checksum>https://pluginstreaming.github.io/plugn-streaming-vip-repo/addons.xml.md5</checksum>
+            <datadir zip="true">https://pluginstreaming.github.io/plugn-streaming-vip-repo/zips/</datadir>
         </dir>
     </extension>
     <extension point="xbmc.addon.metadata">
