@@ -23,7 +23,7 @@
       "id": 4,
       "name": "Jefferson",
       "password": "catarino004",
-      "active": false
+      "active": true
     },
     {
       "id": 5,
