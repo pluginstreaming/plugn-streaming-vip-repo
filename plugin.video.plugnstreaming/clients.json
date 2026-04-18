@@ -39,14 +39,14 @@
     },
     {
       "id": 7,
-      "name": "CLIENTE 7",
-      "password": "senha007",
+      "name": "Cleber",
+      "password": "cardoso007",
       "active": true
     },
     {
       "id": 8,
-      "name": "CLIENTE 8",
-      "password": "senha008",
+      "name": "Euripedes",
+      "password": "teixeira008",
       "active": true
     },
     {
@@ -57,7 +57,7 @@
     },
     {
       "id": 10,
-      "name": "Braz Junior",
+      "nedesame": "Braz Junior",
       "password": "braz010",
       "active": true
     }
