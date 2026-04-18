@@ -57,7 +57,7 @@
     },
     {
       "id": 10,
-      "nedesame": "Braz Junior",
+      "name": "Braz Junior",
       "password": "braz010",
       "active": true
     }
