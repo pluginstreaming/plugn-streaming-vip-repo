@@ -87,6 +87,14 @@
       "url": "http://ncplay.us",
       "user": "2422717392",
       "pass": "2185983621",
+      "active": true
+    },
+    {
+      "id": 12,
+      "name": "12",
+      "url": "http://tvclubmais.com:80",
+      "user": "eliton11",
+      "pass": "d34WKp9918",
       "active": false
     }
   ]
