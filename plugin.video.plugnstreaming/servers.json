@@ -28,9 +28,9 @@
     {
       "id": 4,
       "name": "4",
-      "url": "ltclive.top:80",
-      "user": " 446498894",
-      "pass": " 333605584",
+      "url": "http://peercast.sbs:80",
+      "user": "23031167",
+      "pass": "40368769",
       "active": true
     },
     {
@@ -38,7 +38,7 @@
       "name": "5",
       "url": "http://cleletronics.club:80",
       "user": "333pauloces",
-      "pass": " 909090Pkk",
+      "pass": "909090Pkk",
       "active": true
     },
     {
@@ -84,9 +84,9 @@
     {
       "id": 11,
       "name": "11",
-      "url": "http://82fswxn.club:80",
-      "user": "080571",
-      "pass": "Nb13B8",
+      "url": "",
+      "user": "",
+      "pass": "",
       "active": false
     }
   ]
