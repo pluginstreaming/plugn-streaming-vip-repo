@@ -103,7 +103,23 @@
       "url": "http://clbagk.pro:80",
       "user": "709310",
       "pass": "znz2Nu",
-      "active": true 
+      "active": true
+    },
+    {
+     "id": 14,
+      "name": "14",
+      "url": "http://rotasvip.net:80",
+      "user": "875616",
+      "pass": "sF5zw8",
+      "active": true
+    },
+    {
+      "id": 15,
+      "name": "15",
+      "url": "",
+      "user": "",
+      "pass": "",
+      "active": false
     }
   ]
 }
