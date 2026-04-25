@@ -116,10 +116,10 @@
     {
       "id": 15,
       "name": "15",
-      "url": "",
-      "user": "",
-      "pass": "",
-      "active": false
+      "url": "http://grupovotom.com:80",
+      "user": "RafaelMartins04",
+      "pass": "8465MWQJjpez",
+      "active": true
     }
   ]
 }
