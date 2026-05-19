@@ -23,13 +23,13 @@
       "id": 4,
       "name": "Jefferson",
       "password": "catarino004",
-      "active": true
+      "active": false
     },
     {
       "id": 5,
       "name": "Roberto Outeiro",
       "password": "479233",
-      "active": true
+      "active": false
     },
     {
       "id": 6,
@@ -53,7 +53,7 @@
       "id": 9,
       "name": "Ailton",
       "password": "pires009",
-      "active": true
+      "active": false
     },
     {
       "id": 10,
