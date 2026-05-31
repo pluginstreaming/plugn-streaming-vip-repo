@@ -51,9 +51,9 @@
     },
     {
       "id": 9,
-      "name": "Ailton",
-      "password": "pires009",
-      "active": false
+      "name": "Jonas",
+      "password": "rodrigues009",
+      "active": true
     },
     {
       "id": 10,
