@@ -60,6 +60,12 @@
       "name": "Bacca Campos",
       "password": "campos010",
       "active": false
+    },
+    {
+       "id": 11,
+      "name": "Braz Junior",
+      "password": "teste",
+      "active": true
     }
   ]
 }
