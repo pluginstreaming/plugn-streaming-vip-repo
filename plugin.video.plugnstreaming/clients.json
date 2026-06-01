@@ -57,9 +57,9 @@
     },
     {
       "id": 10,
-      "name": "Bacca Campos",
-      "password": "campos010",
-      "active": false
+      "name": "Ailton Pires",
+      "password": "pires010",
+      "active": true
     },
     {
        "id": 11,
