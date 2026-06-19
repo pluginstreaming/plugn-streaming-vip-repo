@@ -11,7 +11,7 @@
       "id": 2,
       "name": "Mauro Dias",
       "password": "mauro002",
-      "active": true
+      "active": false
     },
     {
       "id": 3,
@@ -23,7 +23,7 @@
       "id": 4,
       "name": "Jefferson",
       "password": "catarino004",
-      "active": true
+      "active": false
     },
     {
       "id": 5,
@@ -41,13 +41,13 @@
       "id": 7,
       "name": "Cleber",
       "password": "cardoso007",
-      "active": true
+      "active": false
     },
     {
       "id": 8,
       "name": "Ruan",
       "password": "scotti008",
-      "active": true
+      "active": false
     },
     {
       "id": 9,
@@ -59,7 +59,7 @@
       "id": 10,
       "name": "Ailton Pires",
       "password": "pires010",
-      "active": true
+      "active": false
     },
     {
        "id": 11,
