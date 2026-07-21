@@ -41,7 +41,7 @@
       "id": 7,
       "name": "Cleber",
       "password": "cardoso007",
-      "active": false
+      "active": true
     },
     {
       "id": 8,
