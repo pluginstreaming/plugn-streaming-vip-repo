@@ -29,7 +29,7 @@
       "id": 5,
       "name": "Silvio Carlos",
       "password": "carlos005",
-      "active": false
+      "active": true
     },
     {
       "id": 6,
