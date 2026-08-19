@@ -9,9 +9,9 @@
     },
     {
       "id": 2,
-      "name": "Mauro Dias",
-      "password": "mauro002",
-      "active": false
+      "name": "Edson Andrade",
+      "password": "andrade002",
+      "active": true
     },
     {
       "id": 3,
