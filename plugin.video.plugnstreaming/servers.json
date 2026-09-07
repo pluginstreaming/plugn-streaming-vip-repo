@@ -28,7 +28,7 @@
     {
       "id": 4,
       "name": "4",
-      "url": "nitrohd.xyz:80",
+      "url": "http://nitrohd.xyz:80",
       "user": "Bruno542854122",
       "pass": "294666468",
       "active": true
@@ -68,7 +68,7 @@
     {
       "id": 9,
       "name": "9",
-      "url": "ubrabo.online:80",
+      "url": "http://ubrabo.online:80",
       "user": "564223982726",
       "pass": "929265906167",
       "active": true
