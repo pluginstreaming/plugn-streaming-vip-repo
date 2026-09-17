@@ -51,14 +51,14 @@
     },
     {
       "id": 9,
-      "name": "Jonas",
-      "password": "rodrigues009",
+      "name": "",
+      "password": "",
       "active": false
     },
     {
       "id": 10,
-      "name": "Ailton Pires",
-      "password": "pires010",
+      "name": "",
+      "password": "",
       "active": false
     },
     {
