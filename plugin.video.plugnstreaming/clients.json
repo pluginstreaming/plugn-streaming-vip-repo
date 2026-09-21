@@ -17,7 +17,7 @@
       "id": 3,
       "name": "Wanderlei Leao",
       "password": "478820",
-      "active": true
+      "active": false
     },
     {
       "id": 4,
@@ -35,7 +35,7 @@
       "id": 6,
       "name": "Gabriel",
       "password": "sartorio006",
-      "active": true
+      "active": false
     },
     {
       "id": 7,
