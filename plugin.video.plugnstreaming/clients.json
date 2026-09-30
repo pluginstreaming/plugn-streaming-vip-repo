@@ -35,7 +35,7 @@
       "id": 6,
       "name": "Gabriel",
       "password": "sartorio006",
-      "active": false
+      "active": true
     },
     {
       "id": 7,
