@@ -57,9 +57,9 @@
     },
     {
       "id": 10,
-      "name": "",
-      "password": "",
-      "active": false
+      "name": "José Filipi",
+      "password": "filipi10",
+      "active": true
     },
     {
       "id": 11,
