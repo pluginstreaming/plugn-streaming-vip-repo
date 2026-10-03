@@ -62,10 +62,16 @@
       "active": false
     },
     {
-       "id": 11,
+      "id": 11,
       "name": "Braz Junior",
       "password": "teste",
       "active": true
+    },
+    {
+      "id": 12,
+      "name": "",
+      "password": "",
+      "active": false
     }
   ]
 }
