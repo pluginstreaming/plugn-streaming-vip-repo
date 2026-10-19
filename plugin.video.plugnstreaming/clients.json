@@ -53,7 +53,7 @@
       "id": 9,
       "name": "José",
       "password": "tavares009",
-      "active": true
+      "active": false
     },
     {
       "id": 10,
