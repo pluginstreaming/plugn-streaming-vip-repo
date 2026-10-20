@@ -5,7 +5,7 @@
       "id": 1,
       "name": "Valentin Suarez",
       "password": "suarez001",
-      "active": true
+      "active": false
     },
     {
       "id": 2,
@@ -35,13 +35,13 @@
       "id": 6,
       "name": "Gabriel",
       "password": "sartorio006",
-      "active": true
-    },
+      "active": false
+    }
     {
       "id": 7,
       "name": "Cleber",
       "password": "cardoso007",
-      "active": true
+      "active": false
     },
     {
       "id": 8,
