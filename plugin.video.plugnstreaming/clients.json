@@ -15,9 +15,9 @@
     },
     {
       "id": 3,
-      "name": "Wanderlei Leao",
-      "password": "478820",
-      "active": false
+      "name": "Francisco Manoel",
+      "password": "manoel003",
+      "active": true
     },
     {
       "id": 4,
